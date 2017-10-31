@@ -7,7 +7,7 @@
 <AnyLogicWorkspace WorkspaceVersion="1.9" AnyLogicVersion="8.1.0.201706091051" AlpVersion="8.0.4">
 <Model>
 	<Id>1404738745607</Id>
-	<Name><![CDATA[DCSSeptemberEdition]]></Name>
+	<Name><![CDATA[DaCSim]]></Name>
 	<EngineVersion>6</EngineVersion>
 	<JavaPackageName><![CDATA[datacentresimulator]]></JavaPackageName>
 	<ModelTimeUnit><![CDATA[Second]]></ModelTimeUnit>
