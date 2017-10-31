@@ -20186,7 +20186,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Supple Temperature (in degree Celcius)]]></Text>
+					<Text><![CDATA[Supply Temperature (in degree Celcius)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
