@@ -1,4 +1,4 @@
-<h1 align="center">DaCSim <img height="30" src="/dacsim.png?raw=true" alt="DaCSim logo"></h1>
+<h1 align="center"><img height="50" src="/DaCSim_logo.png?raw=true" alt="DaCSim logo"></h1>
 <p align="center">
   A Data Centre Simulation Framework
 </p>

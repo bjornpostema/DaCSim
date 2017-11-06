@@ -6149,7 +6149,7 @@ return res;]]></Body>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
 					<Value><![CDATA[]]></Value>
-					<NumberOfIntervals>50</NumberOfIntervals>
+					<NumberOfIntervals>100</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
 					<RangeMaxExpression><![CDATA[1]]></RangeMaxExpression>
@@ -6366,11 +6366,11 @@ return res;]]></Body>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
 					<Value><![CDATA[]]></Value>
-					<NumberOfIntervals>50</NumberOfIntervals>
+					<NumberOfIntervals>100</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
 					<RangeMaxExpression><![CDATA[1]]></RangeMaxExpression>
-					<InitialIntervalSize><![CDATA[0.1]]></InitialIntervalSize>
+					<InitialIntervalSize><![CDATA[0.001]]></InitialIntervalSize>
 					<CalculateCDF>true</CalculateCDF>
 					<CalculatePercentiles>false</CalculatePercentiles>
 					<LowPercent>10</LowPercent>
