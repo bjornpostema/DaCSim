@@ -2396,6 +2396,26 @@ return totalCores;]]></Body>
 					</ImageFiles>
 					<OriginalSize>true</OriginalSize>
 				</Image>
+				<Image>
+					<Id>1509976547023</Id>
+					<Name><![CDATA[image5]]></Name>
+					<X>1000</X><Y>3.132</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>89</Width>
+					<Height>28</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_tiny.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="Slider">
@@ -16773,7 +16793,7 @@ return res;]]></Body>
 				<Line>
 					<Id>1406195699774</Id>
 					<Name><![CDATA[line3]]></Name>
-					<X>418.8147798370913</X><Y>237.85621532286623</Y>
+					<X>416.81478</X><Y>237.85622</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16791,7 +16811,7 @@ return res;]]></Body>
 					<BeginArrowStyle>0</BeginArrowStyle>
 					<EndArrowSize>1</EndArrowSize>
 					<EndArrowStyle>0</EndArrowStyle>
-					<Dx>308</Dx>
+					<Dx>313</Dx>
 					<Dy>0</Dy>
 					<Dz>0</Dz>
 				</Line>
@@ -16823,7 +16843,7 @@ return res;]]></Body>
 				<Text>
 					<Id>1406195730998</Id>
 					<Name><![CDATA[text5]]></Name>
-					<X>555.7820800377759</X><Y>188.68846653287687</Y>
+					<X>545</X><Y>185</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16842,6 +16862,26 @@ return res;]]></Body>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509975271081</Id>
+					<Name><![CDATA[image1]]></Name>
+					<X>175</X><Y>80</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>409</Width>
+					<Height>128</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_medium.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 
 		</ActiveObjectClass>
@@ -17082,7 +17122,7 @@ return res;]]></Body>
 				<Text>
 					<Id>1406194932719</Id>
 					<Name><![CDATA[text6]]></Name>
-					<X>230</X><Y>10</Y>
+					<X>190</X><Y>10</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17284,7 +17324,7 @@ return res;]]></Body>
 				<Text>
 					<Id>1406201141966</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>750</X><Y>50</Y>
+					<X>790</X><Y>50</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17944,6 +17984,26 @@ at the University of Twente.]]></Text>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509975456815</Id>
+					<Name><![CDATA[image5]]></Name>
+					<X>1000</X><Y>3.132</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>89</Width>
+					<Height>28</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_tiny.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="EditBox">
@@ -19697,7 +19757,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1405513204185</Id>
 					<Name><![CDATA[text6]]></Name>
-					<X>230</X><Y>10</Y>
+					<X>190</X><Y>10</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -21073,6 +21133,26 @@ viewMain.dataCentre.dispatcher.getJobsInSystem()]]></TextCode>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509975382293</Id>
+					<Name><![CDATA[image5]]></Name>
+					<X>1000</X><Y>3.132</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>89</Width>
+					<Height>28</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_tiny.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="Button">
@@ -23474,7 +23554,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1406194896105</Id>
 					<Name><![CDATA[text41]]></Name>
-					<X>230</X><Y>10</Y>
+					<X>190</X><Y>10</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23738,6 +23818,26 @@ Transformer]]></Text>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509975301594</Id>
+					<Name><![CDATA[image5]]></Name>
+					<X>1000</X><Y>3.132</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>89</Width>
+					<Height>28</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_tiny.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="Slider">
@@ -25956,7 +26056,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1406194883305</Id>
 					<Name><![CDATA[text6]]></Name>
-					<X>230</X><Y>10</Y>
+					<X>190</X><Y>10</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26154,6 +26254,26 @@ in industry for the year 2013 according to Eurostat]]></Text>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509975450856</Id>
+					<Name><![CDATA[image5]]></Name>
+					<X>1000</X><Y>3.132</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>89</Width>
+					<Height>28</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_tiny.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>true</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="EditBox">
@@ -27711,6 +27831,29 @@ try {
 			<SnapshotFile></SnapshotFile>
 
 			<Shapes>
+				<Rectangle>
+					<Id>1509975033973</Id>
+					<Name><![CDATA[rectangle3]]></Name>
+					<X>-10</X><Y>0</Y>
+					<Label><X>10</X><Y>10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-657956</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<Width>1140</Width>
+					<Height>730</Height>
+					<Rotation>0.0</Rotation>
+					<FillColor>-657956</FillColor>
+					<FillMaterial>null</FillMaterial>
+				</Rectangle>
 				<Group>
 					<Id>1405344911010</Id>
 					<Name><![CDATA[group1]]></Name>
@@ -27730,7 +27873,7 @@ try {
 				<Text>
 					<Id>1404738745614</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>550</X><Y>310</Y>
+					<X>535</X><Y>350</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27740,11 +27883,11 @@ try {
 					<EmbeddedIcon>false</EmbeddedIcon>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
-					<Color>-12490271</Color>
-					<Text><![CDATA[Data Centre Models]]></Text>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Simulation Configuration]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>48</Size>
+						<Size>22</Size>
 						<Style>1</Style>
 					</Font>
 					<Alignment>CENTER</Alignment>
@@ -27904,6 +28047,27 @@ try {
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
+				<Image>
+					<Id>1509974938385</Id>
+					<Name><![CDATA[image]]></Name>
+					<X>255</X><Y>140</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Width>574.744</Width>
+					<Height>180</Height>
+					<Rotation>0.0</Rotation>
+					<ImageFiles>
+						<ImageFile><![CDATA[DaCSim_logo_large.png]]></ImageFile>
+						<ImageFile><![CDATA[DaCSim_logo_large.png]]></ImageFile>
+					</ImageFiles>
+					<OriginalSize>false</OriginalSize>
+				</Image>
 			</Shapes>
 			<Controls>
 				<Control Type="Button">
