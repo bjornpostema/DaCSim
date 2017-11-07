@@ -2176,7 +2176,7 @@ return totalCores;]]></Body>
 				<Text>
 					<Id>1406194917200</Id>
 					<Name><![CDATA[text6]]></Name>
-					<X>230</X><Y>10</Y>
+					<X>190</X><Y>10</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16131,7 +16131,7 @@ return res;]]></Body>
 						<Parameter>
 							<Name><![CDATA[schedulingstrategy]]></Name>
 							<Value Class="CodeValue">
-								<Code><![CDATA["Advanced Power Management"]]></Code>
+								<Code><![CDATA["Advanced Cooling"]]></Code>
 							</Value>
 						</Parameter>
 					</Parameters>
@@ -16718,7 +16718,7 @@ return res;]]></Body>
 				<Line>
 					<Id>1406195667000</Id>
 					<Name><![CDATA[line]]></Name>
-					<X>418.8147798370913</X><Y>280</Y>
+					<X>418.8147798370913</X><Y>279</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16729,7 +16729,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<ZHeight>10</ZHeight>
 					<LineWidth>4</LineWidth>
-					<LineColor>-16777216</LineColor>
+					<LineColor>-8355712</LineColor>
 					<LineMaterial>null</LineMaterial>
 					<LineStyle>SOLID</LineStyle>
 					<BeginArrowSize>1</BeginArrowSize>
@@ -16743,7 +16743,7 @@ return res;]]></Body>
 				<Line>
 					<Id>1406195671907</Id>
 					<Name><![CDATA[line1]]></Name>
-					<X>573.3419903199152</X><Y>280</Y>
+					<X>573.3419903199152</X><Y>279</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16754,7 +16754,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<ZHeight>10</ZHeight>
 					<LineWidth>4</LineWidth>
-					<LineColor>-16777216</LineColor>
+					<LineColor>-8355712</LineColor>
 					<LineMaterial>null</LineMaterial>
 					<LineStyle>SOLID</LineStyle>
 					<BeginArrowSize>1</BeginArrowSize>
@@ -16768,7 +16768,7 @@ return res;]]></Body>
 				<Line>
 					<Id>1406195676391</Id>
 					<Name><![CDATA[line2]]></Name>
-					<X>727.8692008027389</X><Y>280</Y>
+					<X>727.8692008027389</X><Y>279</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16779,7 +16779,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<ZHeight>10</ZHeight>
 					<LineWidth>4</LineWidth>
-					<LineColor>-16777216</LineColor>
+					<LineColor>-8355712</LineColor>
 					<LineMaterial>null</LineMaterial>
 					<LineStyle>SOLID</LineStyle>
 					<BeginArrowSize>1</BeginArrowSize>
@@ -16804,7 +16804,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<ZHeight>10</ZHeight>
 					<LineWidth>4</LineWidth>
-					<LineColor>-16777216</LineColor>
+					<LineColor>-8355712</LineColor>
 					<LineMaterial>null</LineMaterial>
 					<LineStyle>SOLID</LineStyle>
 					<BeginArrowSize>1</BeginArrowSize>
@@ -16818,7 +16818,7 @@ return res;]]></Body>
 				<Line>
 					<Id>1406195705014</Id>
 					<Name><![CDATA[line4]]></Name>
-					<X>573.3419903199152</X><Y>237.85621532286623</Y>
+					<X>573.34199</X><Y>237.85621532286623</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16829,7 +16829,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<ZHeight>10</ZHeight>
 					<LineWidth>4</LineWidth>
-					<LineColor>-16777216</LineColor>
+					<LineColor>-8355712</LineColor>
 					<LineMaterial>null</LineMaterial>
 					<LineStyle>SOLID</LineStyle>
 					<BeginArrowSize>1</BeginArrowSize>
@@ -16865,7 +16865,7 @@ return res;]]></Body>
 				<Image>
 					<Id>1509975271081</Id>
 					<Name><![CDATA[image1]]></Name>
-					<X>175</X><Y>80</Y>
+					<X>175.5</X><Y>66</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -16882,6 +16882,31 @@ return res;]]></Body>
 					</ImageFiles>
 					<OriginalSize>true</OriginalSize>
 				</Image>
+				<Line>
+					<Id>1510066781557</Id>
+					<Name><![CDATA[line5]]></Name>
+					<X>573.34199</X><Y>185</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>4</LineWidth>
+					<LineColor>-8355712</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>-29</Dy>
+					<Dz>0</Dz>
+				</Line>
 			</Shapes>
 
 		</ActiveObjectClass>
@@ -19457,7 +19482,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Line>
 					<Id>1405687388952</Id>
 					<Name><![CDATA[line1]]></Name>
-					<X>560</X><Y>870</Y>
+					<X>560</X><Y>880</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -25926,7 +25951,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1406108927488</Id>
 					<Name><![CDATA[text3]]></Name>
-					<X>800</X><Y>50</Y>
+					<X>50</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26234,7 +26259,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1411728818645</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>800</X><Y>80</Y>
+					<X>500</X><Y>100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26274,13 +26299,195 @@ in industry for the year 2013 according to Eurostat]]></Text>
 					</ImageFiles>
 					<OriginalSize>true</OriginalSize>
 				</Image>
+				<Text>
+					<Id>1510061109769</Id>
+					<Name><![CDATA[text1]]></Name>
+					<X>50</X><Y>150</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Total operational costs (in Euros)]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510061314050</Id>
+					<Name><![CDATA[text2]]></Name>
+					<X>397</X><Y>150</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[variable]]></Text>
+					<TextCode><![CDATA[viewMain.dataCentre.energySupplier.computeCosts()]]></TextCode>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>RIGHT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510061340013</Id>
+					<Name><![CDATA[text4]]></Name>
+					<X>50</X><Y>180</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Approximate costs per month (in Euros)]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510061340024</Id>
+					<Name><![CDATA[text5]]></Name>
+					<X>397</X><Y>180</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[variable]]></Text>
+					<TextCode><![CDATA[viewMain.dataCentre.energySupplier.computeExpectedMonthlyCosts()]]></TextCode>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>RIGHT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510061412544</Id>
+					<Name><![CDATA[text7]]></Name>
+					<X>50</X><Y>90</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Total energy consumed (in kWh)]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510061412551</Id>
+					<Name><![CDATA[text8]]></Name>
+					<X>397</X><Y>90</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[variable]]></Text>
+					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.currentEnergyUsed()]]></TextCode>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>0</Style>
+					</Font>
+					<Alignment>RIGHT</Alignment>
+				</Text>
+				<Line>
+					<Id>1510061561685</Id>
+					<Name><![CDATA[line]]></Name>
+					<X>300</X><Y>140</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>140</Dx>
+					<Dy>0</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Text>
+					<Id>1510061578389</Id>
+					<Name><![CDATA[text9]]></Name>
+					<X>450</X><Y>130</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[X]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>16</Size>
+						<Style>1</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
 			</Shapes>
 			<Controls>
 				<Control Type="EditBox">
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1406116684366</Id>
 					<Name><![CDATA[editbox]]></Name>
-					<X>940</X><Y>50</Y>
+					<X>300</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26304,7 +26511,8 @@ in industry for the year 2013 according to Eurostat]]></Text>
     			<StackChart>
 					<Id>1406116328122</Id>
 					<Name><![CDATA[chart]]></Name>
-					<X>30</X><Y>80</Y>
+					<ExcludeFromBuild>true</ExcludeFromBuild>
+					<X>30</X><Y>300</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26362,7 +26570,8 @@ in industry for the year 2013 according to Eurostat]]></Text>
     			<StackChart>
 					<Id>1406208372146</Id>
 					<Name><![CDATA[chart1]]></Name>
-					<X>30</X><Y>220</Y>
+					<ExcludeFromBuild>true</ExcludeFromBuild>
+					<X>30</X><Y>440</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27873,7 +28082,7 @@ try {
 				<Text>
 					<Id>1404738745614</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>535</X><Y>350</Y>
+					<X>534</X><Y>372</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27909,7 +28118,7 @@ try {
 					<Text><![CDATA[Number of rack]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -27917,7 +28126,7 @@ try {
 				<Text>
 					<Id>1440073212976</Id>
 					<Name><![CDATA[text8]]></Name>
-					<X>410</X><Y>430</Y>
+					<X>410</X><Y>435</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27932,7 +28141,7 @@ try {
 (in virtual time)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -27940,7 +28149,7 @@ try {
 				<Text>
 					<Id>1440073292627</Id>
 					<Name><![CDATA[text9]]></Name>
-					<X>410</X><Y>400</Y>
+					<X>410</X><Y>410</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27954,7 +28163,7 @@ try {
 					<Text><![CDATA[n (Batch means)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -27976,7 +28185,7 @@ try {
 					<Text><![CDATA[Warm-up period]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -27998,7 +28207,7 @@ try {
 					<Text><![CDATA[Number of servers/rack]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -28020,7 +28229,7 @@ try {
 					<Text><![CDATA[Number of cores/server]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -28042,7 +28251,7 @@ try {
 					<Text><![CDATA[Initial workload]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -28082,8 +28291,8 @@ try {
 					<BasicProperties Width="280" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
-						<TextColor/>
+						<FillColor>-16777088</FillColor>
+						<TextColor>-16777088</TextColor>
 						<Enabled>true</Enabled>
 						<ActionCode><![CDATA[if ( getState() == IDLE ) {
 	run();
@@ -28110,7 +28319,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28125,7 +28334,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1440073216615</Id>
 					<Name><![CDATA[simLengthEB]]></Name>
-					<X>570</X><Y>430</Y>
+					<X>570</X><Y>440</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -28133,7 +28342,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28148,7 +28357,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1440073292634</Id>
 					<Name><![CDATA[nValueEB]]></Name>
-					<X>570</X><Y>400</Y>
+					<X>570</X><Y>410</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -28156,7 +28365,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28179,7 +28388,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28202,7 +28411,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28225,7 +28434,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
@@ -28248,7 +28457,7 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 					<BasicProperties Width="120" Height="20" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
-						<FillColor/>
+						<FillColor>-6972</FillColor>
 						<TextColor/>
 						<Enabled>true</Enabled>
 						<EnableExpression><![CDATA[true]]></EnableExpression>
