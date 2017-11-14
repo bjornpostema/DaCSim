@@ -2187,7 +2187,7 @@ return totalCores;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[models]]></Text>
+					<Text><![CDATA[Models]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>14</Size>
@@ -4668,12 +4668,14 @@ powerFile.close();
 if (viewMain != null) {
 	viewMain.powerPerformance.workloadSlider.setValue(workload);
 }
-/*
+
 source.set_rate((serviceRate)*countCores()*(workload/100.0));
 jobarrivalRate = (serviceRate)*countCores()*(workload/100.0);
-*/
+
+/*
 source.set_rate(1.0/(0.008629201/20.0));
-jobarrivalRate = 1.0/(0.008629201/20.0);]]></Action>
+jobarrivalRate = 1.0/(0.008629201/20.0);
+*/]]></Action>
 				</Event>
 				<Event>
 					<Id>1498045284480</Id>
@@ -4746,9 +4748,13 @@ resultsFile.close();]]></Action>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>true</ShowLabel>
-					<Body><![CDATA[// TODO: Improve the code, since mean power-state power is not really the case for the selection of servers, which are running. This goes under the assumption that all jobs are schedules equally, which is not always the case. And the simulation then can be a little misleading to its actual meaning.
-//return (idle * servers.meanIdlePower()) + (processing * servers.meanProcessingPower()) + (booting * servers.meanBootingPower()) + (sleeping * servers.meanSleepPower()) + (off * servers.meanOffPower());
-return (idle * 140.0) + (processing * 200.0) + (booting * 200.0) + (sleeping * 14.0) + (off * 0.0);]]></Body>
+					<Body><![CDATA[//return (idle * servers.meanIdlePower()) + (processing * servers.meanProcessingPower()) + (booting * servers.meanBootingPower()) + (sleeping * servers.meanSleepPower()) + (off * servers.meanOffPower());
+//return (idle * 172.8) + (processing * 463.8) + (booting * 463.8) + (sleeping * 14.0) + (off * 0.0);
+double currentPC = 0.0;
+for (int i=0;i<serverRacks.size();i++) {
+	currentPC += serverRacks.get(i).getPowerConsumption();
+}
+return currentPC;]]></Body>
 				</Function>
 				<Function AccessType="default" StaticFunction="false">
 					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
@@ -8549,6 +8555,36 @@ if (res != null) {
 						<Code><![CDATA[main.initialRacks]]></Code>
 					</Replication>
 					<CollectionType>ARRAY_LIST_BASED</CollectionType>
+					<StatisticsItem>
+						<Name><![CDATA[totalIdlePower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.servers.rackIdlePower()]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[totalProcessingPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.servers.rackProcessingPower()]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[totalBootingPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.servers.rackBootingPower()]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[totalSleepPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.servers.rackSleepPower()]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[totalOffPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.servers.rackOffPower()]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
 					<InEnvironment>true</InEnvironment>	
 					<InitialSpeedCode Class="CodeUnitValue">
 						<Code><![CDATA[10]]></Code>
@@ -8757,23 +8793,36 @@ if (main.schedulingstrategy == "Base Case") {
 } else if (main.schedulingstrategy == "Advanced Power Management") {
 
 	/**
-	 * Advanced Power Management
+	 * Advanced Power Management -> Improvement with shortest queue next
 	 */
 	
-	//Server[] step1 = modPolicies.doPolicies(modPolicies.stateOnAlpha, getServers(), false);
-	//Server[] step2 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, step1, false);
-	Server[] step1 = modPolicies.doPolicies(modPolicies.roundRobinRacksAlpha, getServers(), false);
-	res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step1, true)[0];
+	Server[] step1 = modPolicies.doPolicies(modPolicies.stateOnAlpha, getServers(), false);
+	Server[] step2 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, step1, false);
+	//Server[] step1 = modPolicies.doPolicies(modPolicies.roundRobinRacksAlpha, getServers(), false);
+	//Server[] step1 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, getServers(), false);
+	res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step2, true)[0];
 
 } else if (main.schedulingstrategy == "Combined") {
 
 	/**
 	 * Combined
 	 */
-	
+	// Original
+	/*
 	//Server[] step1 = modPolicies.doPolicies(modPolicies.stateOnAlpha, getServers(), false);
 	Server[] step1 = modPolicies.doPolicies(modPolicies.combinedAlpha, getServers(), false);
 	res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step1, true)[0];
+	*/
+	// Alternative	
+	double perc_temp = 1.0; // Percentage of the decisions that should be made by the thermal-aware job scheduler
+	double perc_rr = 0.0; // Percentage of the decisions that should be made by the performance-aware job scheduler
+	if (uniform_pos() <= perc_temp) {
+		Server[] step1 = modPolicies.doPolicies(modPolicies.temperatureAlpha, getServers(), false);
+		res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step1, true)[0];
+	} else {
+		Server[] step1 = modPolicies.doPolicies(modPolicies.roundRobinRacksAlpha, getServers(), false);
+		res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step1, true)[0];
+	}
 
 }
 
@@ -9920,6 +9969,54 @@ if (res != null) {
 						</InitialValue>
 					</Properties>
 				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1510328066253</Id>
+					<Name><![CDATA[totalBusyPower]]></Name>
+					<X>50</X><Y>640</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1510328066257</Id>
+					<Name><![CDATA[totalSwitchingPower]]></Name>
+					<X>50</X><Y>660</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1510328066261</Id>
+					<Name><![CDATA[totalSleepPower]]></Name>
+					<X>50</X><Y>680</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1510328066265</Id>
+					<Name><![CDATA[totalOffPower]]></Name>
+					<X>50</X><Y>700</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+					</Properties>
+				</Variable>
 				<Variable Class="Parameter">
 					<Id>1404824834025</Id>
 					<Name><![CDATA[idlePower]]></Name>
@@ -10403,6 +10500,7 @@ powerStateChart.receiveMessage("gotoSleep");]]></EntryAction>
 					<Properties Width="100" Height="30">
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.suspending += 1;
+serverRack.coresAvailable -= getCores();
 dispatcher.powerUpdateFunc();
 timeInPowerState = this.time();
 stateFlag = true;]]></EntryAction>
@@ -10422,6 +10520,7 @@ serverRack.suspending -= 1;]]></ExitAction>
 					<Properties Width="100" Height="30">
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.sleeping += 1;
+serverRack.coresAvailable -= getCores();
 dispatcher.powerUpdateFunc();
 timeInPowerState = this.time();
 stateFlag = true;]]></EntryAction>
@@ -10591,7 +10690,8 @@ serverRack.off2sleep -= 1;]]></ExitAction>
 					<IconOffset>43.24428900898052</IconOffset>
 					<Properties Source="1404824833985" Target="1404824833981" Trigger="timeout">
 						<Action><![CDATA[hold.unblock();
-stateFlag = true;]]></Action>
+stateFlag = true;
+serverRack.coresAvailable += getCores();]]></Action>
 						<Timeout Class="CodeUnitValue">
 							<Code><![CDATA[//loadBalancer.getTimeout(loadBalancer.bootingDistr,loadBalancer.bootingRate)
 (double)(1.0/dispatcher.bootingRate)
@@ -11037,7 +11137,8 @@ serverQueue.size() > 0]]></Condition>
 					<IconOffset>44.0</IconOffset>
 					<Properties Source="1405069821170" Target="1404824833981" Trigger="timeout">
 						<Action><![CDATA[hold.unblock();
-stateFlag = true;]]></Action>
+stateFlag = true;
+serverRack.coresAvailable += getCores();]]></Action>
 						<Timeout Class="CodeUnitValue">
 							<Code><![CDATA[//dispatcher.getTimeout(loadBalancer.wakingDistr,loadBalancer.wakingRate)
 (double)(1.0/dispatcher.wakingRate)]]></Code>
@@ -15921,7 +16022,7 @@ return res;]]></Body>
 						<Parameter>
 							<Name><![CDATA[responseTimeThreshold]]></Name>
 							<Value Class="CodeValue">
-								<Code><![CDATA[20]]></Code>
+								<Code><![CDATA[1.0]]></Code>
 							</Value>
 						</Parameter>
 						<Parameter>
@@ -16032,7 +16133,7 @@ return res;]]></Body>
 						<Parameter>
 							<Name><![CDATA[defaultServiceRate]]></Name>
 							<Value Class="CodeValue">
-								<Code><![CDATA[2.0]]></Code>
+								<Code><![CDATA[9.345794392523364485981308411215 //2.0]]></Code>
 							</Value>
 						</Parameter>
 						<Parameter>
@@ -16127,11 +16228,14 @@ return res;]]></Body>
 						</Parameter>
 						<Parameter>
 							<Name><![CDATA[pmstrategy]]></Name>
+							<Value Class="CodeValue">
+								<Code><![CDATA["Advanced"]]></Code>
+							</Value>
 						</Parameter>
 						<Parameter>
 							<Name><![CDATA[schedulingstrategy]]></Name>
 							<Value Class="CodeValue">
-								<Code><![CDATA["Advanced Cooling"]]></Code>
+								<Code><![CDATA["Combined"]]></Code>
 							</Value>
 						</Parameter>
 					</Parameters>
@@ -16619,7 +16723,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[settings]]></Text>
+					<Text><![CDATA[Settings]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -16641,7 +16745,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[costs]]></Text>
+					<Text><![CDATA[Costs]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -16663,7 +16767,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[infrastructure]]></Text>
+					<Text><![CDATA[Infrastructure]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -16685,7 +16789,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[servers]]></Text>
+					<Text><![CDATA[Servers]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -16707,7 +16811,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[models]]></Text>
+					<Text><![CDATA[Models]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -16854,7 +16958,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[results]]></Text>
+					<Text><![CDATA[Results]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>18</Size>
@@ -17016,6 +17120,8 @@ if (distr == 0) {
 	res = "Deterministic";
 } else if (distr == 1) {
 	res = "Exponential";
+} else if (distr == 2) {
+	res = "Mixed Normal";
 }
 
 return res;]]></Body>
@@ -17158,7 +17264,7 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[settings]]></Text>
+					<Text><![CDATA[Settings]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>14</Size>
@@ -17349,7 +17455,7 @@ return res;]]></Body>
 				<Text>
 					<Id>1406201141966</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>790</X><Y>50</Y>
+					<X>750</X><Y>80</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17360,14 +17466,16 @@ return res;]]></Body>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[About:
-This data centre simulation application is developed
-for demonstration and research purposes in AnyLogic
-with an educational licence.
+					<Text><![CDATA[This data centre simulation framework (DaCSim) is developed
+for demonstration and research purposes in AnyLogic with a 
+university researcher license.
 
-This tool is developed as part of the promotion track
-of Björn F. Postema in association with an STW project
-at the University of Twente.]]></Text>
+This tool is developed as part of the promotion track of 
+Björn F. Postema in association with an NWO project
+at the University of Twente.
+
+The source is online avaiable via a GitHub repository:
+https://github.com/bjornpostema/DaCSim]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
@@ -17378,7 +17486,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409820851898</Id>
 					<Name><![CDATA[text1]]></Name>
-					<X>70</X><Y>110</Y>
+					<X>30</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17392,15 +17500,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Job arrival]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820865934</Id>
 					<Name><![CDATA[text2]]></Name>
-					<X>70</X><Y>90</Y>
+					<X>30</X><Y>90</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17414,15 +17522,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Boot]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820904171</Id>
 					<Name><![CDATA[text3]]></Name>
-					<X>70</X><Y>130</Y>
+					<X>30</X><Y>130</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17436,15 +17544,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Service]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820919219</Id>
 					<Name><![CDATA[text4]]></Name>
-					<X>70</X><Y>150</Y>
+					<X>30</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17458,15 +17566,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Server release]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820943458</Id>
 					<Name><![CDATA[text5]]></Name>
-					<X>150</X><Y>70</Y>
+					<X>130</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17477,18 +17585,18 @@ at the University of Twente.]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Rate]]></Text>
+					<Text><![CDATA[Rate (in s^-1)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820954553</Id>
 					<Name><![CDATA[text7]]></Name>
-					<X>250</X><Y>70</Y>
+					<X>230</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17502,15 +17610,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Distribution]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409820985289</Id>
 					<Name><![CDATA[text8]]></Name>
-					<X>150</X><Y>90</Y>
+					<X>130</X><Y>90</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17525,7 +17633,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.bootingRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17533,7 +17641,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409830406827</Id>
 					<Name><![CDATA[text9]]></Name>
-					<X>150</X><Y>110</Y>
+					<X>130</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17548,7 +17656,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.jobarrivalRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17556,7 +17664,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409830414673</Id>
 					<Name><![CDATA[text10]]></Name>
-					<X>150</X><Y>130</Y>
+					<X>130</X><Y>130</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17571,7 +17679,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.serviceRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17579,7 +17687,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409830420548</Id>
 					<Name><![CDATA[text11]]></Name>
-					<X>150</X><Y>150</Y>
+					<X>130</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17594,7 +17702,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.betaRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17602,7 +17710,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840719458</Id>
 					<Name><![CDATA[text12]]></Name>
-					<X>70</X><Y>170</Y>
+					<X>30</X><Y>170</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17616,15 +17724,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Shutdown]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1409840734009</Id>
 					<Name><![CDATA[text13]]></Name>
-					<X>150</X><Y>170</Y>
+					<X>130</X><Y>170</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17639,7 +17747,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.shuttingdownRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17647,7 +17755,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840771869</Id>
 					<Name><![CDATA[text14]]></Name>
-					<X>250</X><Y>170</Y>
+					<X>230</X><Y>170</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17662,7 +17770,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.shuttingdownDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17670,7 +17778,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840785742</Id>
 					<Name><![CDATA[text15]]></Name>
-					<X>250</X><Y>150</Y>
+					<X>230</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17685,7 +17793,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.betaDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17693,7 +17801,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840788566</Id>
 					<Name><![CDATA[text16]]></Name>
-					<X>250</X><Y>90</Y>
+					<X>230</X><Y>90</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17708,7 +17816,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.bootingDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17716,7 +17824,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840796717</Id>
 					<Name><![CDATA[text17]]></Name>
-					<X>250</X><Y>110</Y>
+					<X>230</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17731,7 +17839,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.jobarrivalDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17739,7 +17847,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1409840823060</Id>
 					<Name><![CDATA[text18]]></Name>
-					<X>250</X><Y>130</Y>
+					<X>230</X><Y>130</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17754,7 +17862,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.serviceDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17762,7 +17870,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1422448437029</Id>
 					<Name><![CDATA[text19]]></Name>
-					<X>340</X><Y>70</Y>
+					<X>320</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17773,18 +17881,18 @@ at the University of Twente.]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Adjust Rate]]></Text>
+					<Text><![CDATA[Adjust Rate (in s^-1)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1422448457859</Id>
 					<Name><![CDATA[text20]]></Name>
-					<X>460</X><Y>70</Y>
+					<X>450</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17795,18 +17903,18 @@ at the University of Twente.]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Adjust Distribution]]></Text>
+					<Text><![CDATA[Adjust Distribution*]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1422457568056</Id>
 					<Name><![CDATA[text21]]></Name>
-					<X>460</X><Y>310</Y>
+					<X>30</X><Y>300</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17817,13 +17925,13 @@ at the University of Twente.]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Legend
-
+					<Text><![CDATA[*Legend
 0 = Deterministically Distributed
-1 = (Negatively) Exponentially Distributed]]></Text>
+1 = (Negatively) Exponentially Distributed
+2 = Mixed Normal Distributed]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>12</Size>
+						<Size>11</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17831,7 +17939,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1423130856469</Id>
 					<Name><![CDATA[text22]]></Name>
-					<X>70</X><Y>190</Y>
+					<X>30</X><Y>190</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17845,15 +17953,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Sleep]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1423130856479</Id>
 					<Name><![CDATA[text23]]></Name>
-					<X>150</X><Y>190</Y>
+					<X>130</X><Y>190</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17868,7 +17976,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.sleepingRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17876,7 +17984,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1423130856481</Id>
 					<Name><![CDATA[text24]]></Name>
-					<X>250</X><Y>190</Y>
+					<X>230</X><Y>190</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17891,7 +17999,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.sleepingDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17899,7 +18007,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1423130976925</Id>
 					<Name><![CDATA[text25]]></Name>
-					<X>70</X><Y>210</Y>
+					<X>30</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17913,15 +18021,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Wake]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1423130976927</Id>
 					<Name><![CDATA[text26]]></Name>
-					<X>150</X><Y>210</Y>
+					<X>130</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17936,7 +18044,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.wakingRate]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17944,7 +18052,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1423130976935</Id>
 					<Name><![CDATA[text27]]></Name>
-					<X>250</X><Y>210</Y>
+					<X>230</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17959,7 +18067,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[getDistr(viewMain.dataCentre.dispatcher.wakingDistr)]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -17967,7 +18075,7 @@ at the University of Twente.]]></Text>
 				<Text>
 					<Id>1454408654535</Id>
 					<Name><![CDATA[text28]]></Name>
-					<X>70</X><Y>270</Y>
+					<X>30</X><Y>250</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -17981,15 +18089,15 @@ at the University of Twente.]]></Text>
 					<Text><![CDATA[Q value]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1454414793694</Id>
 					<Name><![CDATA[text29]]></Name>
-					<X>150</X><Y>270</Y>
+					<X>130</X><Y>250</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18004,7 +18112,7 @@ at the University of Twente.]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.dispatcher.QValue]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -18029,13 +18137,185 @@ at the University of Twente.]]></Text>
 					</ImageFiles>
 					<OriginalSize>true</OriginalSize>
 				</Image>
+				<Line>
+					<Id>1510575572300</Id>
+					<Name><![CDATA[line]]></Name>
+					<X>30</X><Y>80</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>550</Dx>
+					<Dy>0</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510575601592</Id>
+					<Name><![CDATA[line1]]></Name>
+					<X>120</X><Y>60</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>220</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510575615680</Id>
+					<Name><![CDATA[line2]]></Name>
+					<X>220</X><Y>60</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>220</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510575621705</Id>
+					<Name><![CDATA[line3]]></Name>
+					<X>310</X><Y>60</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>220</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510575627641</Id>
+					<Name><![CDATA[line4]]></Name>
+					<X>440</X><Y>60</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>220</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510575630956</Id>
+					<Name><![CDATA[line5]]></Name>
+					<X>580</X><Y>60</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>220</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Text>
+					<Id>1510575878639</Id>
+					<Name><![CDATA[text30]]></Name>
+					<X>750</X><Y>60</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[About]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>1</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
 			</Shapes>
 			<Controls>
 				<Control Type="EditBox">
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1409903837345</Id>
 					<Name><![CDATA[editbox]]></Name>
-					<X>340</X><Y>150</Y>
+					<X>325</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18049,7 +18329,7 @@ at the University of Twente.]]></Text>
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.betaRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["1000000.0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.betaRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18060,7 +18340,7 @@ at the University of Twente.]]></Text>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1409904000615</Id>
 					<Name><![CDATA[editbox1]]></Name>
-					<X>340</X><Y>170</Y>
+					<X>325</X><Y>170</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18074,7 +18354,7 @@ at the University of Twente.]]></Text>
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.shuttingdownRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0.01"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18085,7 +18365,7 @@ at the University of Twente.]]></Text>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1409904003684</Id>
 					<Name><![CDATA[editbox2]]></Name>
-					<X>340</X><Y>130</Y>
+					<X>325</X><Y>130</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18096,10 +18376,11 @@ at the University of Twente.]]></Text>
 						<FillColor/>
 						<TextColor/>
 						<Enabled>true</Enabled>
+						<EnableExpression><![CDATA[viewMain.dataCentre.dispatcher.serviceDistr != 2]]></EnableExpression>
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.serviceRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["1.0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.serviceRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18110,7 +18391,7 @@ at the University of Twente.]]></Text>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1409904006756</Id>
 					<Name><![CDATA[editbox3]]></Name>
-					<X>340</X><Y>110</Y>
+					<X>325</X><Y>110</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18129,7 +18410,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 }]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["9.9"
 //Double.toString(mainMenu.dataCentre.loadBalancer.jobarrivalRate)
 //Double.toString(mainMenu.dataCentre.loadBalancer.jobarrivalRate)]]></DefaultValueCode>
@@ -18141,7 +18422,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1409904010501</Id>
 					<Name><![CDATA[editbox4]]></Name>
-					<X>340</X><Y>90</Y>
+					<X>325</X><Y>90</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18155,7 +18436,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.bootingRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0.01"
 //new DecimalFormat("#.##").format(mainMenu.dataCentre.loadBalancer.bootingRate)
 //Double.toString(mainMenu.dataCentre.loadBalancer.bootingRate)]]></DefaultValueCode>
@@ -18181,7 +18462,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.betaDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["1"
 //Double.toString(mainMenu.dataCentre.loadBalancer.betaRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18206,7 +18487,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.shuttingdownDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18231,8 +18512,8 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.serviceDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
-						<DefaultValueCode><![CDATA["1"
+						<Font Name="Dialog" Size="12" Style="0"/>
+						<DefaultValueCode><![CDATA["2"
 //Double.toString(mainMenu.dataCentre.loadBalancer.serviceRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
 						<Link>mainMenu.dataCentre.loadBalancer.serviceRate</Link>
@@ -18261,7 +18542,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 }]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["1"
 //Double.toString(mainMenu.dataCentre.loadBalancer.jobarrivalRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18286,7 +18567,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.bootingDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0"
 //new DecimalFormat("#.##").format(mainMenu.dataCentre.loadBalancer.bootingRate)
 //Double.toString(mainMenu.dataCentre.loadBalancer.bootingRate)]]></DefaultValueCode>
@@ -18298,7 +18579,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1423130856489</Id>
 					<Name><![CDATA[editbox10]]></Name>
-					<X>340</X><Y>190</Y>
+					<X>325</X><Y>190</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18312,7 +18593,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.sleepingRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0.1"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18337,7 +18618,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.sleepingDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18348,7 +18629,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1423130976937</Id>
 					<Name><![CDATA[editbox12]]></Name>
-					<X>340</X><Y>210</Y>
+					<X>325</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18362,7 +18643,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.wakingRate = Double.parseDouble(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0.1"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18387,7 +18668,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 						<ActionCode><![CDATA[viewMain.dataCentre.dispatcher.wakingDistr = Integer.parseInt(value);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18398,7 +18679,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1454408654553</Id>
 					<Name><![CDATA[editbox14]]></Name>
-					<X>340</X><Y>270</Y>
+					<X>325</X><Y>250</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18413,7 +18694,7 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 1) {
 viewMain.dataCentre.dispatcher.modPolicies.setQ(viewMain.dataCentre.dispatcher.QValue);]]></ActionCode>
 					</BasicProperties>
 					<ExtendedProperties>
-						<Font Name="Dialog" Size="11" Style="0"/>
+						<Font Name="Dialog" Size="12" Style="0"/>
 						<DefaultValueCode><![CDATA["1000.0"
 //Double.toString(mainMenu.dataCentre.loadBalancer.shuttingdownRate)]]></DefaultValueCode>
 						<LinkTo>false</LinkTo>
@@ -18425,7 +18706,7 @@ viewMain.dataCentre.dispatcher.modPolicies.setQ(viewMain.dataCentre.dispatcher.Q
 					<Id>1477911011327</Id>
 					<Name><![CDATA[modThermalButton]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>70</X><Y>330</Y>
+					<X>350</X><Y>310</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18447,7 +18728,7 @@ viewMain.dataCentre.dispatcher.modPolicies.setQ(viewMain.dataCentre.dispatcher.Q
 					<Id>1477911058294</Id>
 					<Name><![CDATA[modPMButton]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>70</X><Y>370</Y>
+					<X>350</X><Y>350</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -18752,7 +19033,7 @@ if (traffic_on) {
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18774,7 +19055,7 @@ if (traffic_on) {
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18796,7 +19077,7 @@ if (traffic_on) {
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18818,7 +19099,7 @@ if (traffic_on) {
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18840,7 +19121,7 @@ if (traffic_on) {
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18886,7 +19167,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18931,7 +19212,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18976,7 +19257,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -18998,7 +19279,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19020,7 +19301,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19073,7 +19354,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1405505378946</Id>
 					<Name><![CDATA[text18]]></Name>
-					<X>930</X><Y>90</Y>
+					<X>880</X><Y>90</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -19088,7 +19369,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19233,7 +19514,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1405505378961</Id>
 					<Name><![CDATA[text19]]></Name>
-					<X>898.833</X><Y>380</Y>
+					<X>880</X><Y>380</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -19248,7 +19529,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19339,7 +19620,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19361,7 +19642,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19450,7 +19731,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19607,7 +19888,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1405934782539</Id>
 					<Name><![CDATA[text33]]></Name>
-					<X>890</X><Y>170</Y>
+					<X>880</X><Y>170</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -19622,7 +19903,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19644,7 +19925,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -19793,7 +20074,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[servers]]></Text>
+					<Text><![CDATA[Servers]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>14</Size>
@@ -19985,7 +20266,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1424768937512</Id>
 					<Name><![CDATA[text35]]></Name>
-					<X>430</X><Y>1000</Y>
+					<X>380</X><Y>890</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20000,7 +20281,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20162,7 +20443,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20184,7 +20465,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20260,7 +20541,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1455892094612</Id>
 					<Name><![CDATA[text45]]></Name>
-					<X>891.167</X><Y>250</Y>
+					<X>880</X><Y>250</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20275,29 +20556,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
-					</Font>
-					<Alignment>LEFT</Alignment>
-				</Text>
-				<Text>
-					<Id>1461577869429</Id>
-					<Name><![CDATA[text46]]></Name>
-					<X>200</X><Y>1050</Y>
-					<Label><X>0</X><Y>-10</Y></Label>
-					<PublicFlag>true</PublicFlag>
-					<PresentationFlag>true</PresentationFlag>
-					<ShowLabel>false</ShowLabel>
-					<DrawMode>SHAPE_DRAW_2D</DrawMode>
-					<AsObject>true</AsObject>
-					<EmbeddedIcon>false</EmbeddedIcon>
-					<Z>0</Z>
-					<Rotation>0.0</Rotation>
-					<Color>-16777216</Color>
-					<Text><![CDATA[Power management strategy qualities]]></Text>
-					<Font>
-						<Name>SansSerif</Name>
-						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20319,7 +20578,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>3</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20341,7 +20600,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>3</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20363,7 +20622,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>3</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20385,14 +20644,14 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>3</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578042829</Id>
 					<Name><![CDATA[text51]]></Name>
-					<X>200</X><Y>1080</Y>
+					<X>140</X><Y>1080</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20407,14 +20666,14 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578126729</Id>
 					<Name><![CDATA[text53]]></Name>
-					<X>200</X><Y>1140</Y>
+					<X>140</X><Y>1140</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20425,18 +20684,18 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Performance per Watt]]></Text>
+					<Text><![CDATA[Performance per Watt (in sW^-1)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578147466</Id>
 					<Name><![CDATA[text54]]></Name>
-					<X>200</X><Y>1160</Y>
+					<X>140</X><Y>1160</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20451,14 +20710,14 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578215045</Id>
 					<Name><![CDATA[text55]]></Name>
-					<X>200</X><Y>1220</Y>
+					<X>140</X><Y>1220</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20469,18 +20728,18 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Adaption PSSF]]></Text>
+					<Text><![CDATA[Adaption PSSF (in s^-1)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578337074</Id>
 					<Name><![CDATA[text56]]></Name>
-					<X>200</X><Y>1240</Y>
+					<X>140</X><Y>1240</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20491,18 +20750,18 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Adaption TTA]]></Text>
+					<Text><![CDATA[Adaption TTA (in s)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578467149</Id>
 					<Name><![CDATA[text57]]></Name>
-					<X>200</X><Y>1260</Y>
+					<X>140</X><Y>1260</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20513,18 +20772,18 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Adapting]]></Text>
+					<Text><![CDATA[Adapting (boolean)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578517874</Id>
 					<Name><![CDATA[text58]]></Name>
-					<X>200</X><Y>1180</Y>
+					<X>140</X><Y>1180</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20539,14 +20798,14 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578603741</Id>
 					<Name><![CDATA[text59]]></Name>
-					<X>200</X><Y>1200</Y>
+					<X>140</X><Y>1200</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20561,14 +20820,14 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1461578705095</Id>
 					<Name><![CDATA[text60]]></Name>
-					<X>550</X><Y>1080</Y>
+					<X>430</X><Y>1080</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20591,7 +20850,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578734358</Id>
 					<Name><![CDATA[text62]]></Name>
-					<X>550</X><Y>1140</Y>
+					<X>430</X><Y>1140</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20614,7 +20873,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578744522</Id>
 					<Name><![CDATA[text63]]></Name>
-					<X>550</X><Y>1160</Y>
+					<X>430</X><Y>1160</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20637,7 +20896,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578753839</Id>
 					<Name><![CDATA[text64]]></Name>
-					<X>550</X><Y>1220</Y>
+					<X>430</X><Y>1220</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20660,7 +20919,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578763196</Id>
 					<Name><![CDATA[text65]]></Name>
-					<X>550</X><Y>1240</Y>
+					<X>430</X><Y>1240</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20683,7 +20942,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578773020</Id>
 					<Name><![CDATA[text66]]></Name>
-					<X>550</X><Y>1260</Y>
+					<X>430</X><Y>1260</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20706,7 +20965,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578783402</Id>
 					<Name><![CDATA[text67]]></Name>
-					<X>550</X><Y>1180</Y>
+					<X>430</X><Y>1180</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20728,7 +20987,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1461578793619</Id>
 					<Name><![CDATA[text68]]></Name>
-					<X>550</X><Y>1200</Y>
+					<X>430</X><Y>1200</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20765,7 +21024,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20787,7 +21046,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20880,7 +21139,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -20933,7 +21192,7 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 				<Text>
 					<Id>1473063588901</Id>
 					<Name><![CDATA[text52]]></Name>
-					<X>200</X><Y>1120</Y>
+					<X>140</X><Y>1120</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20944,18 +21203,18 @@ viewMain.dataCentre.dispatcher.getJobsInQueue()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Power switching state frequency (1/s) (PSSF)]]></Text>
+					<Text><![CDATA[Power switching state frequency (PSSF) (in s^-1)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1473063594613</Id>
 					<Name><![CDATA[text61]]></Name>
-					<X>550</X><Y>1120</Y>
+					<X>430</X><Y>1120</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20979,7 +21238,7 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 				<Text>
 					<Id>1473063646969</Id>
 					<Name><![CDATA[text74]]></Name>
-					<X>200</X><Y>1100</Y>
+					<X>140</X><Y>1100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -20994,14 +21253,14 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1473063653038</Id>
 					<Name><![CDATA[text75]]></Name>
-					<X>550</X><Y>1100</Y>
+					<X>430</X><Y>1100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -21024,7 +21283,7 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 				<Text>
 					<Id>1479738942110</Id>
 					<Name><![CDATA[text76]]></Name>
-					<X>60</X><Y>1000</Y>
+					<X>60</X><Y>980</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -21035,18 +21294,18 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[Response Time 95 Percentile]]></Text>
+					<Text><![CDATA[Response Time 95-% (in s)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1479739045974</Id>
 					<Name><![CDATA[text77]]></Name>
-					<X>250</X><Y>1000</Y>
+					<X>230</X><Y>980</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -21084,7 +21343,7 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -21106,7 +21365,7 @@ viewMain.dataCentre.dispatcher.getPSSF()]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -21178,18 +21437,209 @@ viewMain.dataCentre.dispatcher.getJobsInSystem()]]></TextCode>
 					</ImageFiles>
 					<OriginalSize>true</OriginalSize>
 				</Image>
+				<Line>
+					<Id>1510582002769</Id>
+					<Name><![CDATA[line9]]></Name>
+					<X>60</X><Y>870</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>300</Dx>
+					<Dy>0</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510582009480</Id>
+					<Name><![CDATA[line10]]></Name>
+					<X>60</X><Y>890</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>300</Dx>
+					<Dy>0</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510582234466</Id>
+					<Name><![CDATA[line11]]></Name>
+					<X>60</X><Y>1070</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>540</Dx>
+					<Dy>0</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510582239538</Id>
+					<Name><![CDATA[line12]]></Name>
+					<X>130</X><Y>1050</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>230</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Line>
+					<Id>1510582287902</Id>
+					<Name><![CDATA[line13]]></Name>
+					<X>420</X><Y>1050</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D3D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<ZHeight>10</ZHeight>
+					<LineWidth>1</LineWidth>
+					<LineColor>-16777216</LineColor>
+					<LineMaterial>null</LineMaterial>
+					<LineStyle>SOLID</LineStyle>
+					<BeginArrowSize>1</BeginArrowSize>
+					<BeginArrowStyle>0</BeginArrowStyle>
+					<EndArrowSize>1</EndArrowSize>
+					<EndArrowStyle>0</EndArrowStyle>
+					<Dx>0</Dx>
+					<Dy>230</Dy>
+					<Dz>0</Dz>
+				</Line>
+				<Text>
+					<Id>1510582576449</Id>
+					<Name><![CDATA[text80]]></Name>
+					<X>60</X><Y>1050</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Quality]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>1</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510582596073</Id>
+					<Name><![CDATA[text46]]></Name>
+					<X>140</X><Y>1050</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Metric]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>1</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
+				<Text>
+					<Id>1510582608219</Id>
+					<Name><![CDATA[text81]]></Name>
+					<X>430</X><Y>1050</Y>
+					<Label><X>0</X><Y>-10</Y></Label>
+					<PublicFlag>true</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>false</ShowLabel>
+					<DrawMode>SHAPE_DRAW_2D</DrawMode>
+					<AsObject>true</AsObject>
+					<EmbeddedIcon>false</EmbeddedIcon>
+					<Z>0</Z>
+					<Rotation>0.0</Rotation>
+					<Color>-16777216</Color>
+					<Text><![CDATA[Value]]></Text>
+					<Font>
+						<Name>SansSerif</Name>
+						<Size>12</Size>
+						<Style>1</Style>
+					</Font>
+					<Alignment>LEFT</Alignment>
+				</Text>
 			</Shapes>
 			<Controls>
 				<Control Type="Button">
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1405505052523</Id>
 					<Name><![CDATA[rhdButton]]></Name>
-					<X>890</X><Y>650</Y>
+					<X>880</X><Y>650</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21282,12 +21732,12 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 0) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1405505378976</Id>
 					<Name><![CDATA[enablePM]]></Name>
-					<X>890</X><Y>330</Y>
+					<X>880</X><Y>330</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="211" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21340,12 +21790,12 @@ if (viewMain.dataCentre.dispatcher.jobarrivalDistr == 0) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1405505378981</Id>
 					<Name><![CDATA[automateWorkload]]></Name>
-					<X>888.833</X><Y>50</Y>
+					<X>880</X><Y>50</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="203" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21414,12 +21864,12 @@ if (strategyRButton.getValue() == 3) {
 					<Id>1406900002595</Id>
 					<Name><![CDATA[rhdButton1]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>890</X><Y>850</Y>
+					<X>880</X><Y>850</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21436,12 +21886,12 @@ if (strategyRButton.getValue() == 3) {
 					<Id>1424359012310</Id>
 					<Name><![CDATA[rhdButton2]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>890</X><Y>810</Y>
+					<X>880</X><Y>810</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21469,12 +21919,12 @@ if (strategyRButton.getValue() == 3) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1439908093964</Id>
 					<Name><![CDATA[rhdButton3]]></Name>
-					<X>890</X><Y>690</Y>
+					<X>880</X><Y>690</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21492,12 +21942,12 @@ if (strategyRButton.getValue() == 3) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1440081075590</Id>
 					<Name><![CDATA[rhdButton4]]></Name>
-					<X>890</X><Y>730</Y>
+					<X>880</X><Y>730</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21515,12 +21965,12 @@ if (strategyRButton.getValue() == 3) {
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1440082226884</Id>
 					<Name><![CDATA[rhdButton5]]></Name>
-					<X>890</X><Y>770</Y>
+					<X>880</X><Y>770</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>false</ShowLabel>
-					<BasicProperties Width="210" Height="30" 
+					<BasicProperties Width="230" Height="30" 
 				AsObject="true">
                         <EmbeddedIcon>false</EmbeddedIcon>				
 						<FillColor/>
@@ -21615,7 +22065,7 @@ if (strategyRButton.getValue() == 3) {
 					<DrawLine>true</DrawLine>
 					<Interpolation>LINEAR</Interpolation>
 					<DatasetExpression>  
-						<Title><![CDATA[Server Response Time]]></Title>
+						<Title><![CDATA[Server Response Time (in s)]]></Title>
 					<Expression><![CDATA[timeMeasureEnd.dataset]]></Expression>
 					<Color>-13447886</Color>
 					<Expression2><![CDATA[//mainMenu.dataCentre.loadBalancer.timeMeasureEnd.dataset.getYMedian()
@@ -21625,7 +22075,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<LineWidth>3.0</LineWidth>
 					</DatasetExpression>
 					<DatasetExpression>  
-						<Title><![CDATA[Server Response Time Threshold (based on SLA)]]></Title>
+						<Title><![CDATA[Server Response Time Threshold (based on SLA) (in s)]]></Title>
 					<Expression><![CDATA[my_dataset]]></Expression>
 					<Color>-5103070</Color>
 					<Expression2><![CDATA[viewMain.dataCentre.dispatcher.responseTimeThreshold]]></Expression2>
@@ -21634,7 +22084,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<LineWidth>3.0</LineWidth>
 					</DatasetExpression>
 					<DatasetExpression>  
-						<Title><![CDATA[Server Response Time 95 Percentile]]></Title>
+						<Title><![CDATA[Server Response Time 95 Percentile (in s)]]></Title>
 					<Expression><![CDATA[my_dataset1]]></Expression>
 					<Color>-16744320</Color>
 					<Expression2><![CDATA[viewMain.dataCentre.dispatcher.getPercentile()]]></Expression2>
@@ -21787,7 +22237,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<DrawLine>true</DrawLine>
 					<Interpolation>LINEAR</Interpolation>
 					<DatasetExpression>  
-						<Title><![CDATA[Server Power Consumption]]></Title>
+						<Title><![CDATA[Server Power Consumption (in W)]]></Title>
 					<Expression><![CDATA[my_dataset]]></Expression>
 					<Color>-16776961</Color>
 					<Expression2><![CDATA[viewMain.dataCentre.dispatcher.currentPowerConsumption()]]></Expression2>
@@ -21859,7 +22309,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<ColorHighPercent>-9807155</ColorHighPercent>
 						<ColorMean>-8388608</ColorMean>
 						<LineWidth>2</LineWidth>						
-						<Title><![CDATA[Response Time Distribution]]></Title>							
+						<Title><![CDATA[Response Time Distribution (in s)]]></Title>							
 					</HistogramDataExpression>
     			</Histogram>
     			<Histogram>
@@ -21922,13 +22372,13 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<ColorHighPercent>-9807155</ColorHighPercent>
 						<ColorMean>-8388608</ColorMean>
 						<LineWidth>2</LineWidth>						
-						<Title><![CDATA[Server Power Consumption Distribution]]></Title>							
+						<Title><![CDATA[Server Power Consumption Distribution (in W)]]></Title>							
 					</HistogramDataExpression>
     			</Histogram>
     			<StackChart>
 					<Id>1424357095428</Id>
 					<Name><![CDATA[powerstateutilisation]]></Name>
-					<X>380</X><Y>890</Y>
+					<X>330</X><Y>880</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -21945,14 +22395,14 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
 					<EmbeddedIcon>false</EmbeddedIcon>
-					<Width>480</Width>
+					<Width>550</Width>
 					<Height>100</Height>
 					<BackgroundColor/>
 					<BorderColor/>
 					<ChartArea>
 						<XOffset>50</XOffset>
 						<YOffset>30</YOffset>
-						<Width>390</Width>
+						<Width>460</Width>
 						<Height>40</Height>
 						<BackgroundColor>-1</BackgroundColor>
 						<BorderColor>-16777216</BorderColor>
@@ -22027,7 +22477,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
 					<EmbeddedIcon>false</EmbeddedIcon>
-					<Width>400</Width>
+					<Width>420</Width>
 					<Height>290</Height>
 					<BackgroundColor/>
 					<BorderColor/>
@@ -22060,7 +22510,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<DrawLine>true</DrawLine>
 					<Interpolation>LINEAR</Interpolation>
 					<DatasetExpression>  
-						<Title><![CDATA[Average Temperature of all Racks (instant)]]></Title>
+						<Title><![CDATA[Average Temperature of all Racks (instant) (in °C)]]></Title>
 					<Expression><![CDATA[my_dataset]]></Expression>
 					<Color>-65536</Color>
 					<Expression2><![CDATA[(viewMain.dataCentre.modThermal_on) ? viewMain.dataCentre.modThermal.averageTemp(this.time()-1, this.time()) : 0.0]]></Expression2>
@@ -22069,7 +22519,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<LineWidth>3.0</LineWidth>
 					</DatasetExpression>
 					<DatasetExpression>  
-						<Title><![CDATA[Maximum Observed Temperature of all Racks (instant)]]></Title>
+						<Title><![CDATA[Maximum Observed Temperature of all Racks (instant) (in °C)]]></Title>
 					<Expression><![CDATA[my_dataset2]]></Expression>
 					<Color>-7667712</Color>
 					<Expression2><![CDATA[viewMain.dataCentre.dispatcher.maxRackTemp()]]></Expression2>
@@ -22078,7 +22528,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<LineWidth>3.0</LineWidth>
 					</DatasetExpression>
 					<DatasetExpression>  
-						<Title><![CDATA[Minimum Observed Temperature of all Racks (instant)]]></Title>
+						<Title><![CDATA[Minimum Observed Temperature of all Racks (instant) (in °C)]]></Title>
 					<Expression><![CDATA[my_dataset3]]></Expression>
 					<Color>-14774017</Color>
 					<Expression2><![CDATA[viewMain.dataCentre.dispatcher.minRackTemp()]]></Expression2>
@@ -22087,7 +22537,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 						<LineWidth>3.0</LineWidth>
 					</DatasetExpression>
 					<DatasetExpression>  
-						<Title><![CDATA[Supply Temperature]]></Title>
+						<Title><![CDATA[Supply Temperature (in °C)]]></Title>
 					<Expression><![CDATA[my_dataset1]]></Expression>
 					<Color>-16777216</Color>
 					<Expression2><![CDATA[(viewMain.dataCentre.modThermal_on) ? viewMain.dataCentre.modThermal.getTSup() : 0.0]]></Expression2>
@@ -22229,7 +22679,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 				<Text>
 					<Id>1406040292574</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>50</X><Y>250</Y>
+					<X>50</X><Y>230</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22243,15 +22693,15 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Text><![CDATA[Total power consumption (in W)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406040292590</Id>
 					<Name><![CDATA[text1]]></Name>
-					<X>330</X><Y>250</Y>
+					<X>330</X><Y>230</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22274,7 +22724,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 				<Text>
 					<Id>1406040413797</Id>
 					<Name><![CDATA[text2]]></Name>
-					<X>870</X><Y>50</Y>
+					<X>800</X><Y>50</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22289,14 +22739,14 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406040508917</Id>
 					<Name><![CDATA[text3]]></Name>
-					<X>920</X><Y>80</Y>
+					<X>800</X><Y>80</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22311,7 +22761,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -22602,7 +23052,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 				<Text>
 					<Id>1406040813715</Id>
 					<Name><![CDATA[text7]]></Name>
-					<X>60</X><Y>100</Y>
+					<X>55</X><Y>100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22616,7 +23066,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Text><![CDATA[IT Equipment]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -22638,7 +23088,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Text><![CDATA[DC-DC]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -22660,7 +23110,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 					<Text><![CDATA[AC-DC]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -22668,7 +23118,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 				<Text>
 					<Id>1406040875169</Id>
 					<Name><![CDATA[text10]]></Name>
-					<X>540</X><Y>100</Y>
+					<X>540</X><Y>94</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22683,7 +23133,7 @@ viewMain.dataCentre.dispatcher.timeMeasureEnd.dataset.getYMax()]]></Expression2>
 Distribution]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>CENTER</Alignment>
@@ -22691,7 +23141,7 @@ Distribution]]></Text>
 				<Text>
 					<Id>1406040920783</Id>
 					<Name><![CDATA[text11]]></Name>
-					<X>680</X><Y>100</Y>
+					<X>678</X><Y>100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22705,7 +23155,7 @@ Distribution]]></Text>
 					<Text><![CDATA[UPS]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
@@ -22750,7 +23200,7 @@ Distribution]]></Text>
 					<Text><![CDATA[Cooling]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>CENTER</Alignment>
@@ -22781,7 +23231,7 @@ Distribution]]></Text>
 				<Text>
 					<Id>1406040938268</Id>
 					<Name><![CDATA[text13]]></Name>
-					<X>540</X><Y>220</Y>
+					<X>540</X><Y>219</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22797,7 +23247,7 @@ Switchgear/
 Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>11</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
 					<Alignment>CENTER</Alignment>
@@ -22855,7 +23305,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1406041000987</Id>
 					<Name><![CDATA[text14]]></Name>
-					<X>100</X><Y>150</Y>
+					<X>130</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22870,15 +23320,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041067966</Id>
 					<Name><![CDATA[text15]]></Name>
-					<X>250</X><Y>150</Y>
+					<X>280</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22893,15 +23343,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041181008</Id>
 					<Name><![CDATA[text16]]></Name>
-					<X>400</X><Y>150</Y>
+					<X>430</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22916,15 +23366,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computeAC2DC(1.0)+viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041283936</Id>
 					<Name><![CDATA[text17]]></Name>
-					<X>550</X><Y>150</Y>
+					<X>580</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22939,15 +23389,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computePowerDistribution(1.0)+viewMain.dataCentre.cascading.computeAC2DC(1.0)+viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041287137</Id>
 					<Name><![CDATA[text18]]></Name>
-					<X>700</X><Y>150</Y>
+					<X>730</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22962,15 +23412,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computeUPS(1.0)+viewMain.dataCentre.cascading.computePowerDistribution(1.0)+viewMain.dataCentre.cascading.computeAC2DC(1.0)+viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041300808</Id>
 					<Name><![CDATA[text19]]></Name>
-					<X>700</X><Y>280</Y>
+					<X>730</X><Y>280</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -22985,15 +23435,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computeCooling(1.0)+viewMain.dataCentre.cascading.computeUPS(1.0)+viewMain.dataCentre.cascading.computePowerDistribution(1.0)+viewMain.dataCentre.cascading.computeAC2DC(1.0)+viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041306390</Id>
 					<Name><![CDATA[text20]]></Name>
-					<X>550</X><Y>280</Y>
+					<X>580</X><Y>280</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23008,15 +23458,15 @@ Transformer]]></Text>
 					<TextCode><![CDATA[viewMain.dataCentre.cascading.computeBST(1.0)+viewMain.dataCentre.cascading.computeCooling(1.0)+viewMain.dataCentre.cascading.computeUPS(1.0)+viewMain.dataCentre.cascading.computePowerDistribution(1.0)+viewMain.dataCentre.cascading.computeAC2DC(1.0)+viewMain.dataCentre.cascading.computeDC2DC(1.0)+1.0]]></TextCode>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>10</Size>
+						<Size>12</Size>
 						<Style>0</Style>
 					</Font>
-					<Alignment>LEFT</Alignment>
+					<Alignment>RIGHT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041476795</Id>
 					<Name><![CDATA[text21]]></Name>
-					<X>920</X><Y>150</Y>
+					<X>800</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23031,14 +23481,14 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041494252</Id>
 					<Name><![CDATA[text25]]></Name>
-					<X>880</X><Y>220</Y>
+					<X>800</X><Y>220</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23053,14 +23503,14 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041498442</Id>
 					<Name><![CDATA[text29]]></Name>
-					<X>920</X><Y>290</Y>
+					<X>800</X><Y>290</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23075,14 +23525,14 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041506268</Id>
 					<Name><![CDATA[text33]]></Name>
-					<X>910</X><Y>360</Y>
+					<X>800</X><Y>360</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23097,14 +23547,14 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1406041520484</Id>
 					<Name><![CDATA[text37]]></Name>
-					<X>840</X><Y>430</Y>
+					<X>800</X><Y>430</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23119,7 +23569,7 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -23590,7 +24040,7 @@ Transformer]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[infrastructure]]></Text>
+					<Text><![CDATA[Infrastructure]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>14</Size>
@@ -23772,7 +24222,7 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
@@ -23794,14 +24244,14 @@ Transformer]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>12</Size>
-						<Style>0</Style>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1477907838596</Id>
 					<Name><![CDATA[text44]]></Name>
-					<X>50</X><Y>230</Y>
+					<X>50</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -23815,15 +24265,15 @@ Transformer]]></Text>
 					<Text><![CDATA[Power consumption of CRAC units (in W)]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
-						<Size>14</Size>
-						<Style>0</Style>
+						<Size>12</Size>
+						<Style>1</Style>
 					</Font>
 					<Alignment>LEFT</Alignment>
 				</Text>
 				<Text>
 					<Id>1477907838614</Id>
 					<Name><![CDATA[text45]]></Name>
-					<X>330</X><Y>230</Y>
+					<X>330</X><Y>210</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -24037,7 +24487,7 @@ Transformer]]></Text>
     			<PieChart>
 					<Id>1406040292599</Id>
 					<Name><![CDATA[chart]]></Name>
-					<X>10</X><Y>280</Y>
+					<X>10</X><Y>290</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -25951,7 +26401,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1406108927488</Id>
 					<Name><![CDATA[text3]]></Name>
-					<X>50</X><Y>110</Y>
+					<X>30</X><Y>80</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26092,7 +26542,7 @@ Transformer]]></Text>
 					<Z>0</Z>
 					<Rotation>0.0</Rotation>
 					<Color>-16777216</Color>
-					<Text><![CDATA[costs]]></Text>
+					<Text><![CDATA[Costs]]></Text>
 					<Font>
 						<Name>SansSerif</Name>
 						<Size>14</Size>
@@ -26259,7 +26709,7 @@ Transformer]]></Text>
 				<Text>
 					<Id>1411728818645</Id>
 					<Name><![CDATA[text]]></Name>
-					<X>500</X><Y>100</Y>
+					<X>480</X><Y>70</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26302,7 +26752,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061109769</Id>
 					<Name><![CDATA[text1]]></Name>
-					<X>50</X><Y>150</Y>
+					<X>30</X><Y>120</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26324,7 +26774,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061314050</Id>
 					<Name><![CDATA[text2]]></Name>
-					<X>397</X><Y>150</Y>
+					<X>377</X><Y>120</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26347,7 +26797,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061340013</Id>
 					<Name><![CDATA[text4]]></Name>
-					<X>50</X><Y>180</Y>
+					<X>30</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26369,7 +26819,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061340024</Id>
 					<Name><![CDATA[text5]]></Name>
-					<X>397</X><Y>180</Y>
+					<X>377</X><Y>150</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26392,7 +26842,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061412544</Id>
 					<Name><![CDATA[text7]]></Name>
-					<X>50</X><Y>90</Y>
+					<X>30</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26414,7 +26864,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061412551</Id>
 					<Name><![CDATA[text8]]></Name>
-					<X>397</X><Y>90</Y>
+					<X>377</X><Y>60</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26437,7 +26887,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Line>
 					<Id>1510061561685</Id>
 					<Name><![CDATA[line]]></Name>
-					<X>300</X><Y>140</Y>
+					<X>280</X><Y>110</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26462,7 +26912,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				<Text>
 					<Id>1510061578389</Id>
 					<Name><![CDATA[text9]]></Name>
-					<X>450</X><Y>130</Y>
+					<X>430</X><Y>100</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26487,7 +26937,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 				 	<EmbeddedIcon>false</EmbeddedIcon>				
 					<Id>1406116684366</Id>
 					<Name><![CDATA[editbox]]></Name>
-					<X>300</X><Y>110</Y>
+					<X>280</X><Y>80</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26512,7 +26962,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 					<Id>1406116328122</Id>
 					<Name><![CDATA[chart]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>30</X><Y>300</Y>
+					<X>10</X><Y>270</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26571,7 +27021,7 @@ in industry for the year 2013 according to Eurostat]]></Text>
 					<Id>1406208372146</Id>
 					<Name><![CDATA[chart1]]></Name>
 					<ExcludeFromBuild>true</ExcludeFromBuild>
-					<X>30</X><Y>440</Y>
+					<X>10</X><Y>410</Y>
 					<Label><X>0</X><Y>-10</Y></Label>
 					<PublicFlag>true</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26722,7 +27172,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1476971302160</Id>
 					<Name><![CDATA[temp]]></Name>
-					<X>200</X><Y>100</Y>
+					<X>210</X><Y>100</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26737,7 +27187,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1478598143647</Id>
 					<Name><![CDATA[jobsDistributed]]></Name>
-					<X>200</X><Y>190</Y>
+					<X>210</X><Y>190</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26752,7 +27202,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1478598155190</Id>
 					<Name><![CDATA[coresInUse]]></Name>
-					<X>200</X><Y>210</Y>
+					<X>210</X><Y>210</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26767,7 +27217,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1478598166791</Id>
 					<Name><![CDATA[coresCapacity]]></Name>
-					<X>200</X><Y>230</Y>
+					<X>210</X><Y>230</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26782,7 +27232,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1478603919003</Id>
 					<Name><![CDATA[tempFlag]]></Name>
-					<X>200</X><Y>120</Y>
+					<X>210</X><Y>120</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26797,7 +27247,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440468864</Id>
 					<Name><![CDATA[idling]]></Name>
-					<X>50</X><Y>330</Y>
+					<X>50</X><Y>380</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26809,7 +27259,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440472689</Id>
 					<Name><![CDATA[processing]]></Name>
-					<X>50</X><Y>350</Y>
+					<X>50</X><Y>400</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26821,7 +27271,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440477273</Id>
 					<Name><![CDATA[booting]]></Name>
-					<X>50</X><Y>370</Y>
+					<X>50</X><Y>420</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26833,7 +27283,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440493403</Id>
 					<Name><![CDATA[waking]]></Name>
-					<X>50</X><Y>390</Y>
+					<X>50</X><Y>440</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26845,7 +27295,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440497882</Id>
 					<Name><![CDATA[suspending]]></Name>
-					<X>200</X><Y>360</Y>
+					<X>210</X><Y>420</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26857,7 +27307,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440503395</Id>
 					<Name><![CDATA[sleeping]]></Name>
-					<X>200</X><Y>380</Y>
+					<X>210</X><Y>440</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26869,7 +27319,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440531251</Id>
 					<Name><![CDATA[sleep2off]]></Name>
-					<X>50</X><Y>410</Y>
+					<X>50</X><Y>460</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26881,7 +27331,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440547661</Id>
 					<Name><![CDATA[off2sleep]]></Name>
-					<X>200</X><Y>400</Y>
+					<X>210</X><Y>460</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26893,7 +27343,7 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440707707</Id>
 					<Name><![CDATA[asleep]]></Name>
-					<X>200</X><Y>320</Y>
+					<X>210</X><Y>380</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -26905,13 +27355,25 @@ initCoresCapacity();]]></StartupCode>
 				<Variable Class="PlainVariable">
 					<Id>1497440711899</Id>
 					<Name><![CDATA[off]]></Name>
-					<X>200</X><Y>340</Y>
+					<X>210</X><Y>400</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>true</ShowLabel>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[int]]></Type>        
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1510324484444</Id>
+					<Name><![CDATA[coresAvailable]]></Name>
+					<X>210</X><Y>250</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
 					</Properties>
 				</Variable>
 				<Variable Class="Parameter">
@@ -27076,7 +27538,7 @@ return coresInUse;]]></Body>
 					<ReturnType><![CDATA[double]]></ReturnType>
 					<Id>1478598733755</Id>
 					<Name><![CDATA[initCoresCapacity]]></Name>
-					<X>50</X><Y>300</Y>
+					<X>50</X><Y>340</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27084,14 +27546,15 @@ return coresInUse;]]></Body>
 					<Body><![CDATA[int res = 0;
 for (int i=0;i<servers.size();i++)
 	res += servers.get(i).getCores();
-coresCapacity = res;]]></Body>
+coresCapacity = res;
+coresAvailable = res;]]></Body>
 				</Function>
 				<Function AccessType="default" StaticFunction="false">
 					<ReturnModificator>VOID</ReturnModificator>
 					<ReturnType><![CDATA[double]]></ReturnType>
 					<Id>1478598743738</Id>
 					<Name><![CDATA[initCoresInUse]]></Name>
-					<X>50</X><Y>280</Y>
+					<X>50</X><Y>320</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27106,7 +27569,7 @@ coresInUse = res;]]></Body>
 					<ReturnType><![CDATA[double]]></ReturnType>
 					<Id>1478598751274</Id>
 					<Name><![CDATA[initJobsDistributed]]></Name>
-					<X>50</X><Y>260</Y>
+					<X>50</X><Y>300</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27121,7 +27584,7 @@ jobsDistributed = res;]]></Body>
 					<ReturnType><![CDATA[double]]></ReturnType>
 					<Id>1497617198974</Id>
 					<Name><![CDATA[getCoresCapacity4plot]]></Name>
-					<X>50</X><Y>450</Y>
+					<X>50</X><Y>500</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27133,7 +27596,7 @@ jobsDistributed = res;]]></Body>
 					<ReturnType><![CDATA[int]]></ReturnType>
 					<Id>1498488674274</Id>
 					<Name><![CDATA[countUnusable]]></Name>
-					<X>50</X><Y>470</Y>
+					<X>50</X><Y>520</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27145,7 +27608,7 @@ jobsDistributed = res;]]></Body>
 					<ReturnType><![CDATA[int]]></ReturnType>
 					<Id>1505376363962</Id>
 					<Name><![CDATA[getJobsInQueue]]></Name>
-					<X>210</X><Y>260</Y>
+					<X>210</X><Y>300</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27157,19 +27620,43 @@ jobsDistributed = res;]]></Body>
 					<ReturnType><![CDATA[int]]></ReturnType>
 					<Id>1505376376911</Id>
 					<Name><![CDATA[getJobsInService]]></Name>
-					<X>210</X><Y>280</Y>
+					<X>210</X><Y>320</Y>
 					<Label><X>10</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>true</ShowLabel>
 					<Body><![CDATA[return getCoresInUse();]]></Body>
 				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1510324632669</Id>
+					<Name><![CDATA[getCoresAvailable]]></Name>
+					<X>50</X><Y>250</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Body><![CDATA[return coresAvailable;]]></Body>
+				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1510324663597</Id>
+					<Name><![CDATA[getCoresUnavailable]]></Name>
+					<X>50</X><Y>270</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Body><![CDATA[return coresCapacity-coresAvailable;]]></Body>
+				</Function>
 			</Functions>
 			<AnalysisData>
     			<HistogramData>
 					<Id>1505400080192</Id>
 					<Name><![CDATA[timeInSystemDistr]]></Name>
-					<X>50</X><Y>510</Y>
+					<X>50</X><Y>560</Y>
 					<Label><X>15</X><Y>0</Y></Label>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
@@ -27331,6 +27818,36 @@ jobsDistributed = res;]]></Body>
 						<Code><![CDATA[initialServers]]></Code>
 					</Replication>
 					<CollectionType>ARRAY_LIST_BASED</CollectionType>
+					<StatisticsItem>
+						<Name><![CDATA[rackIdlePower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.idlePower]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[rackProcessingPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.processingPower]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[rackBootingPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.bootingPower]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[rackSleepPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.sleepPower]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
+					<StatisticsItem>
+						<Name><![CDATA[rackOffPower]]></Name>
+						<Type>sum</Type>
+						<Expression><![CDATA[item.offPower]]></Expression>
+						<Condition><![CDATA[]]></Condition>
+					</StatisticsItem>
 					<InEnvironment>true</InEnvironment>	
 					<InitialSpeedCode Class="CodeUnitValue">
 						<Code><![CDATA[10]]></Code>
@@ -27799,7 +28316,7 @@ jobsDistributed = res;]]></Body>
 					</RecurrenceCode>
 					<EmbeddedIcon>false</EmbeddedIcon>
 					<Width>260</Width>
-					<Height>230</Height>
+					<Height>250</Height>
 					<BackgroundColor/>
 					<BorderColor/>
 					<ChartArea>
@@ -27814,7 +28331,7 @@ jobsDistributed = res;]]></Body>
 					<Legend>
 						<Place>SOUTH</Place>
 						<TextColor>-16777216</TextColor>
-						<Size>50</Size>
+						<Size>70</Size>
 					</Legend>
 					<Labels>
 						<HorLabelsPosition>DEFAULT</HorLabelsPosition>
@@ -27836,9 +28353,16 @@ jobsDistributed = res;]]></Body>
 					<DatasetExpression>
 					<Expression><![CDATA[my_dataset]]></Expression>
 					<Color>-3308225</Color>
-					<Expression2><![CDATA[(getCoresCapacity() - getCoresInUse())]]></Expression2>
+					<Expression2><![CDATA[(getCoresAvailable() - getCoresInUse())]]></Expression2>
 					<Expression2Flag>true</Expression2Flag>  
 							<Title><![CDATA[Unused Cores]]></Title>
+					</DatasetExpression>
+					<DatasetExpression>
+					<Expression><![CDATA[my_dataset]]></Expression>
+					<Color>-8388608</Color>
+					<Expression2><![CDATA[getCoresUnavailable()]]></Expression2>
+					<Expression2Flag>true</Expression2Flag>  
+							<Title><![CDATA[Unavailable Cores]]></Title>
 					</DatasetExpression>
 					<SamplesToKeep>100</SamplesToKeep>
 					<VerScaleToExpression><![CDATA[getCoresCapacity4plot()]]></VerScaleToExpression>
@@ -27992,7 +28516,7 @@ try {
     // I/O error
 }]]></InitialSetupCode>
 			<MaximumMemory>2048</MaximumMemory>
-			<RandomNumberGenerationType>randomSeed</RandomNumberGenerationType>
+			<RandomNumberGenerationType>fixedSeed</RandomNumberGenerationType>
 			<CustomGeneratorCode>new Random()</CustomGeneratorCode>
 			<BeforeEachExperimentRunCode><![CDATA[getEngine().setStopTime(simLengthEB.getIntValue()+warmUpEB.getIntValue());
 numServersEB.setEnabled(false);
@@ -35656,7 +36180,7 @@ public class ModPolicies implements Serializable {
 				//double reward = 0;
 				//if (ndr == 0) {
 				//	switch (j) {
-				serverRewards[i][0] = alpha[0] > 0 ? rewardRackQueueSize(s) : 0;
+				serverRewards[i][0] = alpha[0] > 0 ? rewardRackQueueSizeProportional(s) : 0;
 				serverRewards[i][1] = alpha[1] > 0 ? rewardCores(s) : 0;
 				serverRewards[i][2] = alpha[2] > 0 ? rewardStateOn(s,Q) : 0;
 				if (ndr == 0) {serverRewards[i][3] = alpha[3] > 0 ? solveNDrandom() : 0;} 
@@ -35869,6 +36393,11 @@ public class ModPolicies implements Serializable {
 	
 	private double rewardRackQueueSize(Server s) {
 		return -(double)s.get_ServerRack().getJobsDistributed();
+//		return -(double)s.serverQueue.size();
+	}
+	
+	private double rewardRackQueueSizeProportional(Server s) {
+		return -(double)(s.get_ServerRack().getJobsDistributed()/(s.get_ServerRack().idling+s.get_ServerRack().processing));
 //		return -(double)s.serverQueue.size();
 	}
 	
