@@ -2722,8 +2722,7 @@ loadBalancer.pms.get(0).strategy = strategyRButton.getValue();]]></ActionCode>
 			<PresentationTopGroupPersistent>true</PresentationTopGroupPersistent>
 			<IconTopGroupPersistent>true</IconTopGroupPersistent>
 			<Import><![CDATA[import java.text.DecimalFormat;
-import java.util.Random;
-import org.apache.commons.math3.distribution.NormalDistribution;]]></Import>
+import java.util.Random;]]></Import>
 			<StartupCode><![CDATA[if (traffic_on == true)  {
 	turnTrafficOn();
 }
@@ -41500,11 +41499,6 @@ public class StaticPMStrategy implements Serializable,PMStrategy {
 	</ClassPathEntry>
 	<ClassPathEntry>
 		<Location><![CDATA[EJML-simple-0.29.jar]]></Location>
-		<Imported>true</Imported>
-		<Folder>false</Folder>
-	</ClassPathEntry>
-	<ClassPathEntry>
-		<Location><![CDATA[commons-math3-3.6.1.jar]]></Location>
 		<Imported>true</Imported>
 		<Folder>false</Folder>
 	</ClassPathEntry>
