@@ -1,4 +1,5 @@
 /output
 /database
+/temp
 *.alp.autosave
 *.original.alp

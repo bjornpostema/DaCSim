@@ -2722,7 +2722,8 @@ loadBalancer.pms.get(0).strategy = strategyRButton.getValue();]]></ActionCode>
 			<PresentationTopGroupPersistent>true</PresentationTopGroupPersistent>
 			<IconTopGroupPersistent>true</IconTopGroupPersistent>
 			<Import><![CDATA[import java.text.DecimalFormat;
-import java.util.Random;]]></Import>
+import java.util.Random;
+import org.apache.commons.math3.distribution.NormalDistribution;]]></Import>
 			<StartupCode><![CDATA[if (traffic_on == true)  {
 	turnTrafficOn();
 }
@@ -3486,6 +3487,36 @@ main.defaultWakingRate
 						</InitialValue>
 					</Properties>
 				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1511171537186</Id>
+					<Name><![CDATA[powerUpdateTrigger]]></Name>
+					<X>570</X><Y>600</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[boolean]]></Type>        
+						<InitialValue Class="CodeValue">
+							<Code><![CDATA[true]]></Code>
+						</InitialValue>
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1511171582912</Id>
+					<Name><![CDATA[latestPowerConsumption]]></Name>
+					<X>570</X><Y>620</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+						<InitialValue Class="CodeValue">
+							<Code><![CDATA[currentPowerConsumption()]]></Code>
+						</InitialValue>
+					</Properties>
+				</Variable>
 				<Variable Class="Parameter">
 					<Id>1454924228113</Id>
 					<Name><![CDATA[toValueParam]]></Name>
@@ -4217,7 +4248,7 @@ if( exp instanceof ExperimentParamVariation )
 }
 */
 
-String type = "basecase";
+String type = "combinedTAExtended";
 
 resultsFile.setFile("output/"+(int)workload+type+"Results.csv", resultsFile.WRITE_APPEND);
     	
@@ -4242,6 +4273,8 @@ resultsFile.println(String.format(Locale.US, "%.3f", viewMain.dataCentre.dispatc
 
 resultsFile.println(String.format(Locale.US, "%.3f", getSLAviolationspercent()));
 resultsFile.println(String.format(Locale.US, "%d", getSLAviolations()));
+
+resultsFile.println(String.format(Locale.US, "%.3f", getExperiment().getRunTimeSeconds()));
 
 resultsFile.close();]]></Action>
 				</Event>
@@ -4577,7 +4610,7 @@ if (timeInSystemCol.size() > 0) {
 						</RecurrenceCode>
 						<Condition><![CDATA[false]]></Condition>
 					</Properties>
-					<Action><![CDATA[String type = "basecase";
+					<Action><![CDATA[String type = "combinedTAExtended";
 
 tempsFile.setFile("output/"+(int)workload+type+"Temps.csv", tempsFile.WRITE_APPEND);
     	
@@ -4633,6 +4666,14 @@ for (int i=0; i<serverRacks.size();i++) {
 powerFile.println();
 
 powerFile.close();
+
+supplyFile.setFile("output/"+(int)workload+type+"Supply.csv", supplyFile.WRITE_APPEND);
+    	
+supplyFile.print(String.format(Locale.US, "%.3f", main.modThermal.getTSup() ) );
+
+supplyFile.println();
+
+supplyFile.close();
 ]]></Action>
 				</Event>
 				<Event>
@@ -4750,11 +4791,18 @@ resultsFile.close();]]></Action>
 					<ShowLabel>true</ShowLabel>
 					<Body><![CDATA[//return (idle * servers.meanIdlePower()) + (processing * servers.meanProcessingPower()) + (booting * servers.meanBootingPower()) + (sleeping * servers.meanSleepPower()) + (off * servers.meanOffPower());
 //return (idle * 172.8) + (processing * 463.8) + (booting * 463.8) + (sleeping * 14.0) + (off * 0.0);
-double currentPC = 0.0;
-for (int i=0;i<serverRacks.size();i++) {
-	currentPC += serverRacks.get(i).getPowerConsumption();
+//Causes the power update only to be computed when power consumption is changed.
+if (powerUpdateTrigger) {
+	double currentPC = 0.0;
+	for (int i=0;i<serverRacks.size();i++) {
+		currentPC += serverRacks.get(i).getPowerConsumption();
+	}
+	if (latestPowerConsumption != currentPC) {
+		latestPowerConsumption = currentPC;
+	}
+	powerUpdateTrigger = false;
 }
-return currentPC;]]></Body>
+return latestPowerConsumption;]]></Body>
 				</Function>
 				<Function AccessType="default" StaticFunction="false">
 					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
@@ -4902,6 +4950,7 @@ if (distr == 0) {
 	} else if (ur <= (wv+=0.094)) {
 		res = normal(15.099, 227.668);
 	} else {
+		// Should not happen
 		// Average value.
 		res = 	(0.089 * normal(0.794, 3.648)) +
 				(0.141 * normal(8.964, 29.248)) +
@@ -4914,8 +4963,23 @@ if (distr == 0) {
 				(0.061 * normal(10.825, 197.852)) +
 				(0.094 * normal(15.099, 227.668));
 	}
-	
 	// Paper original
+	
+	//new MixtureMultivariateNormalDistribution(weights, means, covariances);
+	//traceln((new NormalDistribution(107.169, 13.481)).inverseCumulativeProbability(x));
+	/*
+	double x = Math.random();
+	res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbability(x) +
+			0.141 * (new NormalDistribution(29.248, 8.964)).inverseCumulativeProbability(x) +
+			0.089 * (new NormalDistribution(74.991, 9.484)).inverseCumulativeProbability(x) +
+			0.119 * (new NormalDistribution(84.200, 9.790)).inverseCumulativeProbability(x) +
+			0.238 * (new NormalDistribution(107.169, 13.481)).inverseCumulativeProbability(x) +
+			0.062 * (new NormalDistribution(142.874, 9.240)).inverseCumulativeProbability(x) +
+			0.030 * (new NormalDistribution(160.353, 7.755)).inverseCumulativeProbability(x) +
+			0.070 * (new NormalDistribution(177.298, 9.203)).inverseCumulativeProbability(x) +
+			0.061 * (new NormalDistribution(197.852, 10.825)).inverseCumulativeProbability(x) +
+			0.094 * (new NormalDistribution(227.668, 15.099)).inverseCumulativeProbability(x);
+	*/
 	/*
 	res = 	(0.089 * normal(0.794, 3.648)) +
 			(0.141 * normal(8.964, 29.248)) +
@@ -6084,6 +6148,31 @@ if (main.powermanagement_on == 1) {
 
 return res;]]></Body>
 				</Function>
+				<Function AccessType="default" StaticFunction="false">
+					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
+					<ReturnType><![CDATA[double]]></ReturnType>
+					<Id>1510913069477</Id>
+					<Name><![CDATA[mixtureNormal]]></Name>
+					<ExcludeFromBuild>true</ExcludeFromBuild>
+					<X>410</X><Y>650</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Body><![CDATA[double x = uniform(0.0,1.0);
+traceln(x);
+traceln((new NormalDistribution(107.169, 13.481)).inverseCumulativeProbability(x));
+res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbability(x) +
+		0.141 * (new NormalDistribution(29.248, 8.964)).inverseCumulativeProbability(x) +
+		0.089 * (new NormalDistribution(74.991, 9.484)).inverseCumulativeProbability(x) +
+		0.119 * (new NormalDistribution(84.200, 9.790)).inverseCumulativeProbability(x) +
+		0.238 * (new NormalDistribution(107.169, 13.481)).inverseCumulativeProbability(x) +
+		0.062 * (new NormalDistribution(142.874, 9.240)).inverseCumulativeProbability(x) +
+		0.030 * (new NormalDistribution(160.353, 7.755)).inverseCumulativeProbability(x) +
+		0.070 * (new NormalDistribution(177.298, 9.203)).inverseCumulativeProbability(x) +
+		0.061 * (new NormalDistribution(197.852, 10.825)).inverseCumulativeProbability(x) +
+		0.094 * (new NormalDistribution(227.668, 15.099)).inverseCumulativeProbability(x);]]></Body>
+				</Function>
 			</Functions>
 			<TableFunctions>
 				<TableFunction AccessType="public" StaticFunction="true">
@@ -7035,6 +7124,20 @@ return res;]]></Body>
 					<ShowLabel>true</ShowLabel>
 					<FileType>FILE</FileType>
 					<FileName><![CDATA[output/basecaseResults.csv]]></FileName>
+					<FileMode>WRITE_APPEND</FileMode>
+					<CharsetName>null</CharsetName>
+					<Separators></Separators>
+				</TextFile>
+				<TextFile>
+					<Id>1511171971852</Id>
+					<Name><![CDATA[supplyFile]]></Name>
+					<X>-260</X><Y>360</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<FileType>FILE</FileType>
+					<FileName><![CDATA[output/basecaseSupply.csv]]></FileName>
 					<FileMode>WRITE_APPEND</FileMode>
 					<CharsetName>null</CharsetName>
 					<Separators></Separators>
@@ -8793,14 +8896,14 @@ if (main.schedulingstrategy == "Base Case") {
 } else if (main.schedulingstrategy == "Advanced Power Management") {
 
 	/**
-	 * Advanced Power Management -> Improvement with shortest queue next
+	 * Advanced Power Management
 	 */
 	
-	Server[] step1 = modPolicies.doPolicies(modPolicies.stateOnAlpha, getServers(), false);
-	Server[] step2 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, step1, false);
-	//Server[] step1 = modPolicies.doPolicies(modPolicies.roundRobinRacksAlpha, getServers(), false);
+	//Server[] step1 = modPolicies.doPolicies(modPolicies.stateOnAlpha, getServers(), false);
+	//Server[] step2 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, step1, false);
+	Server[] step1 = modPolicies.doPolicies(modPolicies.roundRobinRacksAlpha, getServers(), false);
 	//Server[] step1 = modPolicies.doPolicies(modPolicies.queuesizeAlpha, getServers(), false);
-	res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step2, true)[0];
+	res = modPolicies.doPolicies(modPolicies.solveNDAlpha, step1, true)[0];
 
 } else if (main.schedulingstrategy == "Combined") {
 
@@ -9775,6 +9878,9 @@ if (res != null) {
 			<ClientAreaTopLeft><X>0</X><Y>0</Y></ClientAreaTopLeft>
 			<PresentationTopGroupPersistent>true</PresentationTopGroupPersistent>
 			<IconTopGroupPersistent>true</IconTopGroupPersistent>
+			<StartupCode><![CDATA[for (int i = 0; i<coresPower.length; i++) {
+	coresPower[i] = (((processingPower - idlePower)/getCores())*i)+idlePower;
+}]]></StartupCode>
 			<Generic>false</Generic>
 			<GenericParameter>
 				<Id>1422285625272</Id>
@@ -10015,6 +10121,21 @@ if (res != null) {
 					<ShowLabel>true</ShowLabel>
 					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
 						<Type><![CDATA[double]]></Type>        
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1511173563985</Id>
+					<Name><![CDATA[coresPower]]></Name>
+					<X>210</X><Y>480</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double[]]]></Type>        
+						<InitialValue Class="CodeValue">
+							<Code><![CDATA[new double[getCores()+1]]]></Code>
+						</InitialValue>
 					</Properties>
 				</Variable>
 				<Variable Class="Parameter">
@@ -10384,6 +10505,7 @@ if (res != null) {
 						<EntryAction><![CDATA[dispatcher.off += 1;
 serverRack.off += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.off -= 1;
 serverRack.off -= 1;]]></ExitAction>
@@ -10402,6 +10524,7 @@ serverRack.off -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.booting += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.booting -= 1;
 serverRack.booting -= 1;]]></ExitAction>
@@ -10450,6 +10573,7 @@ powerStateChart.receiveMessage("gotoOn");]]></EntryAction>
 						<EntryAction><![CDATA[dispatcher.sleeping += 1;
 serverRack.asleep += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.sleeping -= 1;
 serverRack.asleep -= 1;]]></ExitAction>
@@ -10468,6 +10592,7 @@ serverRack.asleep -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.waking += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.booting -= 1;
 serverRack.waking -= 1;]]></ExitAction>
@@ -10522,6 +10647,7 @@ serverRack.suspending -= 1;]]></ExitAction>
 serverRack.sleeping += 1;
 serverRack.coresAvailable -= getCores();
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();
 stateFlag = true;]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.booting -= 1;
@@ -10541,6 +10667,7 @@ serverRack.sleeping -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.processing += 1;
 serverRack.processing += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.processing -= 1;
 serverRack.processing -= 1;]]></ExitAction>
@@ -10559,6 +10686,7 @@ serverRack.processing -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.idle += 1;
 serverRack.idling += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();
 timeToWait = dispatcher.getTimeout(dispatcher.betaDistr,dispatcher.betaRate);]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.idle -= 1;
@@ -10589,6 +10717,7 @@ serverRack.idling -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.sleep2off += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.booting -= 1;
 serverRack.sleep2off -= 1;]]></ExitAction>
@@ -10607,6 +10736,7 @@ serverRack.sleep2off -= 1;]]></ExitAction>
 						<EntryAction><![CDATA[dispatcher.booting += 1;
 serverRack.off2sleep += 1;
 dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 timeInPowerState = this.time();]]></EntryAction>
 						<ExitAction><![CDATA[dispatcher.booting -= 1;
 serverRack.off2sleep -= 1;]]></ExitAction>
@@ -11572,7 +11702,9 @@ return c;]]></Body>
 
 if (powerStateChart.isStateActive(processing)) {
 	//with cores
-	pc = (((processingPower - idlePower)/getCores())*processingDelay.size())+idlePower;
+	//pc = (((processingPower - idlePower)/getCores())*processingDelay.size())+idlePower;
+	//improvement with cores
+	pc = coresPower[processingDelay.size()];
 	//without cores
 	//pc = processingPower;
 } else if (powerStateChart.isStateActive(idle)) {
@@ -12283,6 +12415,8 @@ queueFlag = true;]]></Code>
 							<Value Class="CodeValue">
 								<Code><![CDATA[powerStateChart.receiveMessage("processing");
 serverRack.coresInUse++;
+dispatcher.powerUpdateFunc();
+serverRack.powerUpdateTrigger = true;
 queueFlag = true;]]></Code>
 							</Value>
 						</Parameter>
@@ -12294,6 +12428,8 @@ queueFlag = true;]]></Code>
 							<Value Class="CodeValue">
 								<Code><![CDATA[if (serverQueue.size() == 0 && processingDelay.size() == 0) {
 	powerStateChart.receiveMessage("idle");
+	dispatcher.powerUpdateFunc();
+	serverRack.powerUpdateTrigger = true;
 }]]></Code>
 							</Value>
 						</Parameter>
@@ -27376,6 +27512,36 @@ initCoresCapacity();]]></StartupCode>
 						<Type><![CDATA[double]]></Type>        
 					</Properties>
 				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1511172485672</Id>
+					<Name><![CDATA[latestPowerConsumption]]></Name>
+					<X>50</X><Y>590</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[double]]></Type>        
+						<InitialValue Class="CodeValue">
+							<Code><![CDATA[getPowerConsumption()]]></Code>
+						</InitialValue>
+					</Properties>
+				</Variable>
+				<Variable Class="PlainVariable">
+					<Id>1511172493567</Id>
+					<Name><![CDATA[powerUpdateTrigger]]></Name>
+					<X>50</X><Y>610</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties SaveInSnapshot="true" Constant="false" AccessType="public" StaticVariable="false">
+						<Type><![CDATA[boolean]]></Type>        
+						<InitialValue Class="CodeValue">
+							<Code><![CDATA[true]]></Code>
+						</InitialValue>
+					</Properties>
+				</Variable>
 				<Variable Class="Parameter">
 					<Id>1476971302168</Id>
 					<Name><![CDATA[initialTemp]]></Name>
@@ -27454,12 +27620,19 @@ initCoresCapacity();]]></StartupCode>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>true</ShowLabel>
-					<Body><![CDATA[double pc = 0;
-
-for (int i = 0; i < servers.size(); i++)
-	pc += servers.get(i).getPowerConsumption();
-
-return pc;]]></Body>
+					<Body><![CDATA[if (powerUpdateTrigger) {
+	double pc = 0;
+	
+	for (int i = 0; i < servers.size(); i++) {
+		pc += servers.get(i).getPowerConsumption();
+	}
+	if (latestPowerConsumption != pc) {
+		latestPowerConsumption = pc;
+		dispatcher.powerUpdateTrigger = true;
+	}
+	powerUpdateTrigger = false;
+}
+return latestPowerConsumption;]]></Body>
 				</Function>
 				<Function AccessType="default" StaticFunction="false">
 					<ReturnModificator>RETURNS_VALUE</ReturnModificator>
@@ -28439,10 +28612,10 @@ jobsDistributed = res;]]></Body>
 	<DifferentialEquationsMethod>EULER</DifferentialEquationsMethod>
 	<MixedEquationsMethod>RK45_NEWTON</MixedEquationsMethod>
 	<AlgebraicEquationsMethod>MODIFIED_NEWTON</AlgebraicEquationsMethod>
-	<AbsoluteAccuracy>1.0E-5</AbsoluteAccuracy>
+	<AbsoluteAccuracy>1.0E-4</AbsoluteAccuracy>
 	<FixedTimeStep>0.1</FixedTimeStep>
-	<RelativeAccuracy>1.0E-5</RelativeAccuracy>
-	<TimeAccuracy>1.0E-5</TimeAccuracy>
+	<RelativeAccuracy>1.0E-4</RelativeAccuracy>
+	<TimeAccuracy>1.0E-4</TimeAccuracy>
 	<Frame>
 		<Width>1132</Width>
 		<Height>730</Height>
@@ -28474,7 +28647,61 @@ jobsDistributed = res;]]></Body>
 			<EnableZoomAndPanning>true</EnableZoomAndPanning>
 			<Maximized>false</Maximized>
 		</AnimationProperties>
-		<Inputs>		
+		<Inputs>
+    		<RunConfigurationInput>
+				<Id>1510911431071</Id>
+				<Name><![CDATA[Service Rate (in job/s)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[defaultServiceRate]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>
+    		<RunConfigurationInput>
+				<Id>1510911389645</Id>
+				<Name><![CDATA[Service Time Distribution (0 = Deterministic, 1 = Exponential, 2 = Mixture Normal)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[defaultServiceDistr]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>
+    		<RunConfigurationInput>
+				<Id>1510911517163</Id>
+				<Name><![CDATA[Job arrival rate (in job/s)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[defaultJobArrivalRate]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>
+    		<RunConfigurationInput>
+				<Id>1510911453472</Id>
+				<Name><![CDATA[Job arrival distribution (0 = deterministic, 1 = exponential, 2 = mixture normal)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[defaultJobArrivalDistr]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>
+    		<RunConfigurationInput>
+				<Id>1510911305778</Id>
+				<Name><![CDATA[Power management strategy (AlwaysOn, Demotion, Strong, Advanced)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[pmstrategy]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>
+    		<RunConfigurationInput>
+				<Id>1510911300519</Id>
+				<Name><![CDATA[Scheduling strategy (Base Case, Advanced Power Management, Advanced Cooling, Combined)]]></Name>
+				<InputReference>
+					<PackageName><![CDATA[datacentresimulator]]></PackageName>
+					<ClassName><![CDATA[DataCentre]]></ClassName>
+					<ItemName><![CDATA[schedulingstrategy]]></ItemName>
+				</InputReference>
+    		</RunConfigurationInput>		
 		</Inputs>
 		<Outputs>
 		</Outputs>
@@ -28515,7 +28742,7 @@ try {
 } catch (IOException ex) {
     // I/O error
 }]]></InitialSetupCode>
-			<MaximumMemory>2048</MaximumMemory>
+			<MaximumMemory>4096</MaximumMemory>
 			<RandomNumberGenerationType>fixedSeed</RandomNumberGenerationType>
 			<CustomGeneratorCode>new Random()</CustomGeneratorCode>
 			<BeforeEachExperimentRunCode><![CDATA[getEngine().setStopTime(simLengthEB.getIntValue()+warmUpEB.getIntValue());
@@ -29064,10 +29291,10 @@ getPresentation().setPresentable( getEngine().getRoot() );]]></ActionCode>
 			</PresentationProperties>
 			<ModelTimeProperties>
 				<StopOption><![CDATA[Stop at specified time]]></StopOption>
-				<InitialDate><![CDATA[1477630800000]]></InitialDate>	
+				<InitialDate><![CDATA[1510894800000]]></InitialDate>	
 				<InitialTime><![CDATA[0.0]]></InitialTime>	
-				<FinalDate><![CDATA[1477717200000]]></FinalDate>	
-				<FinalTime><![CDATA[86400.0]]></FinalTime>	
+				<FinalDate><![CDATA[1510898400000]]></FinalDate>	
+				<FinalTime><![CDATA[3600.0]]></FinalTime>	
 			</ModelTimeProperties>
 		</SimulationExperiment>
 		<!--   =========  Parameter Variation Experiment   ========  -->
@@ -36368,14 +36595,16 @@ public class ModPolicies implements Serializable {
 			// Retrieve new workload distribition
 			//dc.modThermal.controlJobDistr();
 			double[] D_new = dc.modThermal.getDNew();
-			
 			double dif = (s.serverRack.getCoresInUse()-D_new[s.get_ServerRack().getIndex()]);
+			if (s.serverRack.getCoresInUse() + s.serverRack.getCoresUnavailable() >= s.serverRack.getCoresCapacity()) {
+				dif += 1000000.0;
+			}
 //			double dif = 0;
 			//traceln(s.getIndex()+" "+s.serverRack.getIndex()+" "+(-dif));
 			//traceln(s.serverQueue.size());
 			//if (s.serverQueue.size() == 0) {
 				//traceln("test1: -"+dif);
-				return -dif;
+			return -dif;
 			//} else if (s.serverQueue.size() > 0) {
 				//traceln("test2: -100000.0-"+dif);
 				//return -q-dif;
@@ -41271,6 +41500,11 @@ public class StaticPMStrategy implements Serializable,PMStrategy {
 	</ClassPathEntry>
 	<ClassPathEntry>
 		<Location><![CDATA[EJML-simple-0.29.jar]]></Location>
+		<Imported>true</Imported>
+		<Folder>false</Folder>
+	</ClassPathEntry>
+	<ClassPathEntry>
+		<Location><![CDATA[commons-math3-3.6.1.jar]]></Location>
 		<Imported>true</Imported>
 		<Folder>false</Folder>
 	</ClassPathEntry>
