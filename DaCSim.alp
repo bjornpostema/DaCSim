@@ -4101,6 +4101,7 @@ hold.recalculateConditions();
 						<Condition><![CDATA[false]]></Condition>
 					</Properties>
 					<Action><![CDATA[powerUpdateFunc();
+powerUpdateFunc();
 powerMeans.add(this.time()-((getEngine().getStopTime()-main.warmup)/main.nr_of_batches),(powerStats.integral()-previousIntegral)/((getEngine().getStopTime()-main.warmup)/main.nr_of_batches));
 previousIntegral = powerStats.integral();]]></Action>
 				</Event>
@@ -4247,7 +4248,7 @@ if( exp instanceof ExperimentParamVariation )
 }
 */
 
-String type = "combinedTAExtended";
+String type = "basecase";
 
 resultsFile.setFile("output/"+(int)workload+type+"Results.csv", resultsFile.WRITE_APPEND);
     	
@@ -4458,7 +4459,11 @@ SLAviolations = 0;
 SLAsinkwu = sink.in.count();
 
 powerUpdateFunc();
+previousIntegral = powerStats.integral();
+previousIntegral2 = powerStats.integral();
+previousIntegral3 = powerStats.integral();
 
+powerUpdateFunc();
 previousIntegral = powerStats.integral();
 previousIntegral2 = powerStats.integral();
 previousIntegral3 = powerStats.integral();]]></Action>
@@ -4609,7 +4614,7 @@ if (timeInSystemCol.size() > 0) {
 						</RecurrenceCode>
 						<Condition><![CDATA[false]]></Condition>
 					</Properties>
-					<Action><![CDATA[String type = "combinedTAExtended";
+					<Action><![CDATA[String type = "basecase";
 
 tempsFile.setFile("output/"+(int)workload+type+"Temps.csv", tempsFile.WRITE_APPEND);
     	
@@ -4775,6 +4780,38 @@ resultsFile.print(String.format(Locale.US, "%.3f", getSLAviolations()));
 resultsFile.println();
 
 resultsFile.close();]]></Action>
+				</Event>
+				<Event>
+					<Id>1515492332439</Id>
+					<Name><![CDATA[updater]]></Name>
+					<ExcludeFromBuild>true</ExcludeFromBuild>
+					<X>1190</X><Y>400</Y>
+					<Label><X>10</X><Y>0</Y></Label>
+					<PublicFlag>false</PublicFlag>
+					<PresentationFlag>true</PresentationFlag>
+					<ShowLabel>true</ShowLabel>
+					<Properties TriggerType="timeout" Mode="cyclic">
+						<Timeout Class="CodeUnitValue">
+							<Code><![CDATA[1]]></Code>
+							<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
+						</Timeout>
+						<Rate Class="CodeUnitValue">
+							<Code><![CDATA[1]]></Code>
+							<Unit Class="RateUnits"><![CDATA[PER_SECOND]]></Unit>
+						</Rate>
+						<OccurrenceAtTime>true</OccurrenceAtTime>
+						<OccurrenceDate>1448438400000</OccurrenceDate>
+						<OccurrenceTime Class="CodeUnitValue">
+							<Code><![CDATA[0]]></Code>
+							<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
+						</OccurrenceTime>
+						<RecurrenceCode Class="CodeUnitValue">
+							<Code><![CDATA[1]]></Code>
+							<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
+						</RecurrenceCode>
+						<Condition><![CDATA[false]]></Condition>
+					</Properties>
+					<Action><![CDATA[powerUpdateFunc();]]></Action>
 				</Event>
 			</Events>
 			<Functions>
@@ -5007,7 +5044,10 @@ return res;]]></Body>
 					<PublicFlag>false</PublicFlag>
 					<PresentationFlag>true</PresentationFlag>
 					<ShowLabel>true</ShowLabel>
-					<Body><![CDATA[powerStats.add(currentPowerConsumption(),timeLastEvent-main.simulationStartTime);
+					<Body><![CDATA[traceln(timeLastEvent);
+traceln(main.simulationStartTime);
+traceln(currentPowerConsumption());
+powerStats.add(currentPowerConsumption(),timeLastEvent-main.simulationStartTime);
 //totalPowerDistr.add(main.cascading.cascaded());
 totalPowerStats.add(main.cascading.cascaded(),timeLastEvent-main.simulationStartTime);
 //PSUDistrSleeping.add(sleeping);
@@ -6262,7 +6302,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>100</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6293,7 +6333,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6324,7 +6364,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[0.1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6355,7 +6395,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[0.1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6386,7 +6426,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[0.1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6417,7 +6457,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[0.1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6448,7 +6488,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[0.1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -6479,7 +6519,7 @@ res = 	0.089 * (new NormalDistribution(3.648, 0.794)).inverseCumulativeProbabili
 						<Code><![CDATA[1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>100</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -11791,7 +11831,7 @@ return pc;]]></Body>
 						<Code><![CDATA[1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>50</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -16363,15 +16403,9 @@ return res;]]></Body>
 						</Parameter>
 						<Parameter>
 							<Name><![CDATA[pmstrategy]]></Name>
-							<Value Class="CodeValue">
-								<Code><![CDATA["Advanced"]]></Code>
-							</Value>
 						</Parameter>
 						<Parameter>
 							<Name><![CDATA[schedulingstrategy]]></Name>
-							<Value Class="CodeValue">
-								<Code><![CDATA["Combined"]]></Code>
-							</Value>
 						</Parameter>
 					</Parameters>
 					<ReplicationFlag>false</ReplicationFlag>
@@ -27844,7 +27878,7 @@ jobsDistributed = res;]]></Body>
 						<Code><![CDATA[1]]></Code>
 						<Unit Class="TimeUnits"><![CDATA[SECOND]]></Unit>
 					</RecurrenceCode>
-					<Value><![CDATA[]]></Value>
+					<Value><![CDATA[null]]></Value>
 					<NumberOfIntervals>10</NumberOfIntervals>
 					<MinMaxAutodetect>true</MinMaxAutodetect>
 					<RangeMinExpression><![CDATA[0]]></RangeMinExpression>
@@ -37404,7 +37438,7 @@ public class ModThermal implements Serializable {
     	//return this.T_sup[0];
     }
     
-    public void setTSupManually(double t_sup) {   	
+    public void setTSupManually(double t_sup) {
     	this.adj_T_sup_timer = 0.0;
     	this.adj_T_sup_old = getTSup();
     	this.adj_T_sup_alpha = (t_sup-adj_T_sup_old)/adj_T_sup_duration;
@@ -38761,7 +38795,7 @@ public class AdvancedPMStrategy implements Serializable,PMStrategy {
      * @return int contains the number of servers that should be put to sleep.
      */
     public int checkGotoSleep() {
-    	if (/*getMPM().satGlobalQueue((int)getMPM().getServerPool().size()/4,getMPM().LEQ) &&*/getMPM().satRTExpMovAvg(15.0,getMPM().LEQ) && getMPM().satPSUIns(0.2, Server.idle, getMPM().GE) && !getMPM().satLastServers(1)) {
+    	if (/*getMPM().satGlobalQueue((int)getMPM().getServerPool().size()/4,getMPM().LEQ) &&*/getMPM().satRTExpMovAvg(15.0,getMPM().LEQ) && getMPM().satPSUIns(0.3, Server.idle, getMPM().GE) && !getMPM().satLastServers(1)) {
     		return 1;
     	} else {
     		return 0;
@@ -38774,7 +38808,7 @@ public class AdvancedPMStrategy implements Serializable,PMStrategy {
      * @return int contains the number of servers that should be turned off.
      */
     public int checkGotoOff() {
-    	if (getMPM().satPSUIns(0.2, Server.idle, getMPM().GE) && getMPM().satPSUIns(0.3,Server.off,getMPM().LEQ) && getMPM().satPSUIns(0.05,Server.booting,getMPM().LEQ)) {
+    	if (getMPM().satPSUIns(0.3, Server.idle, getMPM().GE) && getMPM().satPSUIns(0.3,Server.off,getMPM().LEQ) && getMPM().satPSUIns(0.05,Server.booting,getMPM().LEQ)) {
     		return 1;
     	} else {
     		return 0;
